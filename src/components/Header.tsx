@@ -92,7 +92,7 @@ export function Header({
           <Input
             type="text"
             placeholder="Buscar negócios ou contatos..."
-            className="pl-9 pr-4 h-9 bg-slate-50 border-slate-200 focus-visible:ring-teal-600 text-sm"
+            className="pl-9 pr-4 h-9 bg-slate-50 border-slate-200 focus-visible:ring-[#84bd22] text-sm"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value)
@@ -125,7 +125,7 @@ export function Header({
                             setShowSearchResults(false)
                           }}
                         >
-                          <Briefcase className="h-4 w-4 text-teal-600 shrink-0" />
+                          <Briefcase className="h-4 w-4 text-[#84bd22] shrink-0" />
                           <div className="truncate">
                             <p className="font-medium text-slate-800 truncate">{deal.title}</p>
                             <p className="text-xs text-slate-500">
@@ -155,7 +155,7 @@ export function Header({
                             setShowSearchResults(false)
                           }}
                         >
-                          <Phone className="h-4 w-4 text-indigo-600 shrink-0" />
+                          <Phone className="h-4 w-4 text-slate-700 shrink-0" />
                           <div className="truncate">
                             <p className="font-medium text-slate-800 truncate">{contact.name}</p>
                             <p className="text-xs text-slate-500">
@@ -175,8 +175,8 @@ export function Header({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-full p-1 hover:bg-slate-100 transition-colors focus:outline-none">
-              <Avatar className="h-9 w-9 border border-teal-600/20 bg-teal-50 text-teal-800 font-bold">
-                <AvatarFallback className="bg-teal-700 text-white font-semibold text-xs">
+              <Avatar className="h-9 w-9 border border-[#84bd22]/40 bg-[#84bd22] text-slate-950 font-bold">
+                <AvatarFallback className="bg-[#84bd22] text-slate-950 font-bold text-xs">
                   {getInitials(user?.name || user?.email)}
                 </AvatarFallback>
               </Avatar>
