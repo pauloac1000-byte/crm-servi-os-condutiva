@@ -55,7 +55,9 @@ export function Header({
         .filter(
           (c) =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (c.company && c.company.toLowerCase().includes(searchQuery.toLowerCase())),
+            (c.company && c.company.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (c.cidade && c.cidade.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (c.estado && c.estado.toLowerCase().includes(searchQuery.toLowerCase())),
         )
         .slice(0, 4)
     : []
@@ -159,7 +161,12 @@ export function Header({
                           <div className="truncate">
                             <p className="font-medium text-slate-800 truncate">{contact.name}</p>
                             <p className="text-xs text-slate-500">
-                              {contact.company || contact.email}
+                              {[
+                                contact.company,
+                                [contact.cidade, contact.estado].filter(Boolean).join(' - '),
+                              ]
+                                .filter(Boolean)
+                                .join(' • ') || contact.email}
                             </p>
                           </div>
                         </button>

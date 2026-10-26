@@ -198,11 +198,15 @@ export function DealModal({
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {contacts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name} {c.company ? `(${c.company})` : ''}
-                    </SelectItem>
-                  ))}
+                  {contacts.map((c) => {
+                    const loc = [c.cidade, c.estado].filter(Boolean).join(' - ')
+                    const info = [c.company, loc].filter(Boolean).join(', ')
+                    return (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} {info ? `(${info})` : ''}
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
             </div>

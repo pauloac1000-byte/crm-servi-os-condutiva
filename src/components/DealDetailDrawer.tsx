@@ -14,6 +14,7 @@ import {
   Plus,
   CheckCircle,
   Clock,
+  MapPin,
 } from 'lucide-react'
 import { ActivityModal } from '@/components/ActivityModal'
 import { toast } from 'sonner'
@@ -110,6 +111,12 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
                     <span>
                       {contact.company} {contact.role ? `• ${contact.role}` : ''}
                     </span>
+                  </div>
+                )}
+                {(contact.cidade || contact.estado) && (
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>{[contact.cidade, contact.estado].filter(Boolean).join(' - ')}</span>
                   </div>
                 )}
                 {contact.email && (

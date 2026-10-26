@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Trash2, Edit2, Mail, Phone, Building } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, Mail, Phone, Building, MapPin } from 'lucide-react'
 import { ContactModal } from '@/components/ContactModal'
 import { ContactDetailDrawer } from '@/components/ContactDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -57,7 +57,9 @@ export default function Contacts() {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
-      (c.company || '').toLowerCase().includes(search.toLowerCase())
+      (c.company || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.cidade || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.estado || '').toLowerCase().includes(search.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter
     return matchesSearch && matchesStatus
@@ -142,7 +144,15 @@ export default function Contacts() {
                     <td className="p-4 font-bold text-slate-900">{contact.name}</td>
                     <td className="p-4 text-xs text-slate-600">
                       <div className="font-semibold text-slate-800">{contact.company || '—'}</div>
-                      <div className="text-slate-400">{contact.role}</div>
+                      {(contact.cidade || contact.estado) && (
+                        <div className="text-slate-500 flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
+                          <span>
+                            {[contact.cidade, contact.estado].filter(Boolean).join(' - ')}
+                          </span>
+                        </div>
+                      )}
+                      {contact.role && <div className="text-slate-400 mt-0.5">{contact.role}</div>}
                     </td>
                     <td className="p-4 text-xs space-y-1">
                       {contact.email && (

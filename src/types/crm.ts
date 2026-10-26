@@ -12,6 +12,8 @@ export interface Contact {
   phone?: string
   company?: string
   role?: string
+  cidade?: string
+  estado?: string
   status: 'lead' | 'prospect' | 'cliente' | 'inativo'
   notes?: string
   owner: string

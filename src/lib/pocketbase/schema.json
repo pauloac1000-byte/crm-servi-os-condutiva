@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T16:39:41.507Z",
+  "generatedAt": "2026-10-26T16:51:46.257Z",
   "collections": [
     {
       "name": "users",
@@ -164,6 +164,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "cidade",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "estado",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

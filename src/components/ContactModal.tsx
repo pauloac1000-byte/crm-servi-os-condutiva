@@ -35,6 +35,8 @@ export function ContactModal({ open, onOpenChange, contactToEdit, onSuccess }: C
   const [phone, setPhone] = useState('')
   const [company, setCompany] = useState('')
   const [role, setRole] = useState('')
+  const [cidade, setCidade] = useState('')
+  const [estado, setEstado] = useState('')
   const [status, setStatus] = useState<'lead' | 'prospect' | 'cliente' | 'inativo'>('lead')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,6 +49,8 @@ export function ContactModal({ open, onOpenChange, contactToEdit, onSuccess }: C
       setPhone(contactToEdit.phone || '')
       setCompany(contactToEdit.company || '')
       setRole(contactToEdit.role || '')
+      setCidade(contactToEdit.cidade || '')
+      setEstado(contactToEdit.estado || '')
       setStatus(contactToEdit.status || 'lead')
       setNotes(contactToEdit.notes || '')
     } else {
@@ -55,6 +59,8 @@ export function ContactModal({ open, onOpenChange, contactToEdit, onSuccess }: C
       setPhone('')
       setCompany('')
       setRole('')
+      setCidade('')
+      setEstado('')
       setStatus('lead')
       setNotes('')
     }
@@ -73,6 +79,8 @@ export function ContactModal({ open, onOpenChange, contactToEdit, onSuccess }: C
         phone: phone.trim(),
         company: company.trim(),
         role: role.trim(),
+        cidade: cidade.trim(),
+        estado: estado.trim().toUpperCase(),
         status,
         notes: notes.trim(),
       }
@@ -173,6 +181,33 @@ export function ContactModal({ open, onOpenChange, contactToEdit, onSuccess }: C
                 placeholder="Ex: Gerente de TI"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="cidade" className="text-slate-700 font-semibold text-xs">
+                Cidade
+              </Label>
+              <Input
+                id="cidade"
+                placeholder="Ex: São Paulo"
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="estado" className="text-slate-700 font-semibold text-xs">
+                Estado
+              </Label>
+              <Input
+                id="estado"
+                placeholder="UF (ex: SP)"
+                maxLength={2}
+                value={estado}
+                onChange={(e) => setEstado(e.target.value.toUpperCase())}
               />
             </div>
           </div>

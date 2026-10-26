@@ -6,7 +6,16 @@ import { Contact, Deal, Activity, PipelineStage } from '@/types/crm'
 import { getDeals } from '@/services/deals'
 import { getActivities } from '@/services/activities'
 import { getPipelineStages } from '@/services/pipeline_stages'
-import { Mail, Phone, Building, Briefcase, Plus, PlusCircle, CheckCircle2 } from 'lucide-react'
+import {
+  Mail,
+  Phone,
+  Building,
+  Briefcase,
+  Plus,
+  PlusCircle,
+  CheckCircle2,
+  MapPin,
+} from 'lucide-react'
 import { DealModal } from '@/components/DealModal'
 import { ActivityModal } from '@/components/ActivityModal'
 
@@ -84,6 +93,12 @@ export function ContactDetailDrawer({
               <div className="flex items-center gap-2.5 text-slate-700">
                 <Building className="h-4 w-4 text-teal-600 shrink-0" />
                 <span className="font-semibold">{contact.company}</span>
+              </div>
+            )}
+            {(contact.cidade || contact.estado) && (
+              <div className="flex items-center gap-2.5 text-slate-600">
+                <MapPin className="h-4 w-4 text-teal-600 shrink-0" />
+                <span>{[contact.cidade, contact.estado].filter(Boolean).join(' - ')}</span>
               </div>
             )}
             {contact.email && (
