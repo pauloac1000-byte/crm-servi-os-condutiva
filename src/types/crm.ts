@@ -1,8 +1,14 @@
+export type UserRole = 'admin' | 'user'
+
 export interface User {
   id: string
   name: string
   email: string
   avatar?: string
+  role?: UserRole
+  created?: string
+  updated?: string
+  verified?: boolean
 }
 
 export interface Contact {

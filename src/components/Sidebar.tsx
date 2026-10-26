@@ -1,6 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { LayoutDashboard, Kanban, Briefcase, Users, CheckCircle2, LogOut } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Kanban,
+  Briefcase,
+  Users,
+  CheckCircle2,
+  ShieldCheck,
+  LogOut,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import logoImg from '@/assets/logo-removebg-previewedited-6e100.jpg'
@@ -12,7 +20,7 @@ interface SidebarProps {
 export function Sidebar({ onCloseMobile }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, isAdmin } = useAuth()
 
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -20,6 +28,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     { label: 'Negócios', path: '/deals', icon: Briefcase },
     { label: 'Contatos', path: '/contacts', icon: Users },
     { label: 'Atividades', path: '/activities', icon: CheckCircle2 },
+    ...(isAdmin ? [{ label: 'Usuários', path: '/users', icon: ShieldCheck }] : []),
   ]
 
   const handleLogout = () => {

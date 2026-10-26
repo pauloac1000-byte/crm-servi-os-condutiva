@@ -29,6 +29,7 @@ const titlesMap: Record<string, string> = {
   '/deals': 'Gestão de Negócios',
   '/contacts': 'Contatos & CRM',
   '/activities': 'Atividades & Tarefas',
+  '/users': 'Administração de Usuários',
 }
 
 export function Header({
@@ -196,6 +197,11 @@ export function Header({
             <DropdownMenuLabel className="font-normal text-xs text-slate-500">
               Conectado como{' '}
               <strong className="font-semibold text-slate-800 block truncate">{user?.email}</strong>
+              {user?.role === 'admin' && (
+                <span className="mt-1 inline-block rounded bg-[#84bd22]/20 px-1.5 py-0.5 text-[10px] font-bold text-slate-900 uppercase">
+                  Administrador
+                </span>
+              )}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -205,6 +211,15 @@ export function Header({
               <UserIcon className="mr-2 h-4 w-4 text-slate-400" />
               Meu Perfil
             </DropdownMenuItem>
+            {user?.role === 'admin' && (
+              <DropdownMenuItem
+                className="cursor-pointer text-slate-700 font-medium"
+                onClick={() => navigate('/users')}
+              >
+                <UserIcon className="mr-2 h-4 w-4 text-[#84bd22]" />
+                Gerenciar Usuários
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50"

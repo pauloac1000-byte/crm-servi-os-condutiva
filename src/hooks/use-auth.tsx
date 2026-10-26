@@ -1,9 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import pb from '@/lib/pocketbase/client'
 
+import { User } from '@/types/crm'
+
 interface AuthContextType {
-  user: any
+  user: User | null
   isAuthenticated: boolean
+  isAdmin: boolean
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => void
@@ -21,13 +24,17 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(pb.authStore.isValid ? pb.authStore.record : null)
+  const [user, setUser] = useState<User | null>(
+    pb.authStore.isValid && pb.authStore.record ? (pb.authStore.record as unknown as User) : null,
+  )
   const [isAuthenticated, setIsAuthenticated] = useState(pb.authStore.isValid)
   const [loading, setLoading] = useState(true)
 
+  const isAdmin = Boolean(user && user.role === 'admin')
+
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
-      setUser(pb.authStore.isValid ? record : null)
+      setUser(pb.authStore.isValid && record ? (record as unknown as User) : null)
       setIsAuthenticated(pb.authStore.isValid)
     })
 
@@ -97,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         isAuthenticated,
+        isAdmin,
         signUp,
         signIn,
         signOut,
