@@ -21,11 +21,14 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null)
     const trimmed = email.trim()
     if (!trimmed) {
+      setErrorMessage('Informe seu e-mail cadastrado.')
       toast.error('Informe seu e-mail cadastrado.')
       return
     }
@@ -36,8 +39,10 @@ export default function ForgotPassword() {
 
     if (error) {
       const msg =
+        (error as any)?.data?.message ||
         (error as any)?.message ||
         'Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.'
+      setErrorMessage(msg)
       toast.error(msg)
     } else {
       setSent(true)
@@ -71,29 +76,49 @@ export default function ForgotPassword() {
 
         {sent ? (
           <CardContent className="space-y-4 pt-4 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#84bd22]/20 border border-[#84bd22]/40 text-[#84bd22]">
-              <CheckCircle2 className="h-8 w-8" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#84bd22]/20 border-2 border-[#84bd22] text-[#84bd22] shadow-lg shadow-[#84bd22]/20">
+              <CheckCircle2 className="h-9 w-9 text-[#84bd22]" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-base font-semibold text-white">E-mail enviado!</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-base font-semibold text-white">E-mail de recuperação enviado!</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
                 Enviamos um link de redefinição para{' '}
-                <strong className="text-[#84bd22] font-semibold">{email}</strong>. Siga as
-                instruções recebidas para cadastrar sua nova senha.
+                <strong className="text-[#84bd22] font-semibold">{email}</strong>. Verifique sua
+                caixa de entrada e a pasta de spam. O link expira em instantes.
               </p>
             </div>
-            <div className="pt-2">
-              <Link to="/login">
+            <div className="pt-2 space-y-2">
+              <Link to="/login" className="block">
                 <Button className="w-full bg-[#84bd22] hover:bg-[#74a91e] text-slate-950 font-bold h-11 shadow-lg shadow-[#84bd22]/20">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Voltar ao Login
                 </Button>
               </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setSent(false)
+                  setErrorMessage(null)
+                }}
+                className="w-full text-xs text-slate-400 hover:text-white"
+              >
+                Enviar para outro e-mail
+              </Button>
             </div>
           </CardContent>
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <CardContent className="space-y-4 pt-4">
+              {errorMessage && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200 flex items-start gap-2.5"
+                >
+                  <p className="leading-relaxed flex-1">{errorMessage}</p>
+                </div>
+              )}
+
               <p className="text-xs text-slate-400 leading-relaxed">
                 Digite o e-mail associado à sua conta. Se houver cadastro, você receberá um link
                 para redefinir a senha com segurança.
