@@ -12,16 +12,29 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card'
-import { Lock, Mail, ArrowRight } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Lock, Mail, ArrowRight, CheckCircle2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import logoImg from '@/assets/logo-removebg-previewedited-6e100.jpg'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { signIn } = useAuth()
+  const { signIn, requestPasswordReset } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Forgot password modal state
+  const [forgotOpen, setForgotOpen] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,6 +100,17 @@ export default function Login() {
                 <Label htmlFor="password" className="text-slate-300 text-xs font-semibold">
                   Senha
                 </Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email)
+                    setResetSuccess(false)
+                    setForgotOpen(true)
+                  }}
+                  className="text-xs text-[#84bd22] hover:underline focus:outline-none focus:ring-1 focus:ring-[#84bd22] rounded px-1 transition-colors"
+                >
+                  Esqueceu sua senha?
+                </button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
@@ -122,6 +146,118 @@ export default function Login() {
           </CardFooter>
         </form>
       </Card>
+
+      {/* Modal: Recuperação de Senha */}
+      <Dialog
+        open={forgotOpen}
+        onOpenChange={(open) => {
+          setForgotOpen(open)
+          if (!open) setResetSuccess(false)
+        }}
+      >
+        <DialogContent className="border-slate-800 bg-slate-900 text-slate-100 sm:max-w-md">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+              <Lock className="h-5 w-5 text-[#84bd22]" />
+              Recuperar Senha
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400 leading-relaxed">
+              Digite seu e-mail cadastrado. Se houver uma conta associada, você receberá um link
+              para redefinir sua senha com segurança.
+            </DialogDescription>
+          </DialogHeader>
+
+          {resetSuccess ? (
+            <div className="space-y-4 py-3 text-center animate-fade-in-up">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#84bd22]/20 border border-[#84bd22]/40 text-[#84bd22]">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div className="space-y-1.5">
+                <h4 className="text-sm font-semibold text-white">E-mail enviado!</h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Enviamos um link de redefinição para{' '}
+                  <strong className="text-[#84bd22] font-semibold">{resetEmail}</strong>. Verifique
+                  sua caixa de entrada e pasta de spam.
+                </p>
+              </div>
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setForgotOpen(false)}
+                  className="w-full bg-[#84bd22] hover:bg-[#74a91e] text-slate-950 font-bold h-10"
+                >
+                  Entendi, fechar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault()
+                const trimmed = resetEmail.trim()
+                if (!trimmed) {
+                  toast.error('Informe seu e-mail cadastrado.')
+                  return
+                }
+
+                setResetLoading(true)
+                const { error } = await requestPasswordReset(trimmed)
+                setResetLoading(false)
+
+                if (error) {
+                  // In some setups, PB returns error if user not found, or fails on SMTP
+                  const msg =
+                    (error as any)?.message ||
+                    'Não foi possível enviar o e-mail de recuperação. Tente novamente mais tarde.'
+                  toast.error(msg)
+                } else {
+                  setResetSuccess(true)
+                  toast.success('Enviamos um link de redefinição para seu e-mail.')
+                }
+              }}
+              className="space-y-4 pt-2"
+            >
+              <div className="space-y-1.5">
+                <Label htmlFor="reset-email" className="text-slate-300 text-xs font-semibold">
+                  E-mail cadastrado
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="seu.email@condutiva.com.br"
+                    className="bg-slate-950/80 border-slate-800 pl-9 text-white placeholder:text-slate-600 focus-visible:ring-[#84bd22]"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setForgotOpen(false)}
+                  className="text-slate-400 hover:text-white hover:bg-slate-800 text-xs"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="bg-[#84bd22] hover:bg-[#74a91e] text-slate-950 font-bold text-xs h-10 px-4 shadow-md shadow-[#84bd22]/20"
+                >
+                  {resetLoading ? 'Enviando...' : 'Enviar Link de Redefinição'}
+                  <Send className="ml-2 h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

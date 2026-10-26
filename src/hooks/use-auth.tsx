@@ -7,6 +7,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, name?: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => void
+  requestPasswordReset: (email: string) => Promise<{ error: any }>
+  confirmPasswordReset: (token: string, password: string) => Promise<{ error: any }>
   loading: boolean
 }
 
@@ -71,6 +73,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     pb.authStore.clear()
   }
 
+  const requestPasswordReset = async (email: string) => {
+    try {
+      // In PocketBase, requestPasswordReset sends an email with the reset token
+      await pb.collection('users').requestPasswordReset(email)
+      return { error: null }
+    } catch (error) {
+      return { error }
+    }
+  }
+
+  const confirmPasswordReset = async (token: string, password: string) => {
+    try {
+      await pb.collection('users').confirmPasswordReset(token, password, password)
+      return { error: null }
+    } catch (error) {
+      return { error }
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -79,6 +100,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signUp,
         signIn,
         signOut,
+        requestPasswordReset,
+        confirmPasswordReset,
         loading,
       }}
     >
