@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Contact, Deal, Activity, PipelineStage } from '@/types/crm'
+import { Contact, Deal, Activity, EtapaFunil } from '@/types/crm'
 import { getDeals } from '@/services/deals'
 import { getActivities } from '@/services/activities'
 import { getPipelineStages } from '@/services/pipeline_stages'
@@ -34,7 +34,7 @@ export function ContactDetailDrawer({
 }: ContactDetailDrawerProps) {
   const [deals, setDeals] = useState<Deal[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
-  const [stages, setStages] = useState<PipelineStage[]>([])
+  const [stages, setStages] = useState<EtapaFunil[]>([])
   const [newDealOpen, setNewDealOpen] = useState(false)
   const [newActivityOpen, setNewActivityOpen] = useState(false)
 
@@ -157,15 +157,20 @@ export function ContactDetailDrawer({
                       <p className="text-sm font-semibold text-slate-800">{d.title}</p>
                       <p className="text-xs text-teal-700 font-bold">{formatCurrency(d.value)}</p>
                     </div>
-                    {d.expand?.stage && (
+                    {d.expand?.etapa && (
                       <span
                         className="text-[11px] px-2 py-0.5 rounded-full font-medium"
                         style={{
-                          backgroundColor: `${d.expand.stage.color}15`,
-                          color: d.expand.stage.color,
+                          backgroundColor: `${d.expand.etapa.cor || '#0F766E'}15`,
+                          color: d.expand.etapa.cor || '#0F766E',
                         }}
                       >
-                        {d.expand.stage.name}
+                        {d.expand.etapa.nome}
+                      </span>
+                    )}
+                    {d.expand?.etapa_anterior && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-rose-50 text-rose-700">
+                        parou em: {d.expand.etapa_anterior.nome}
                       </span>
                     )}
                   </div>

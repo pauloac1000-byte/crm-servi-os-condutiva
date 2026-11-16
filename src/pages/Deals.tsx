@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getDeals, deleteDeal } from '@/services/deals'
 import { getPipelineStages } from '@/services/pipeline_stages'
 import { getContacts } from '@/services/contacts'
-import { Deal, PipelineStage, Contact } from '@/types/crm'
+import { Deal, EtapaFunil, Contact, DealStatus } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,7 +21,7 @@ import { toast } from 'sonner'
 
 export default function Deals() {
   const [deals, setDeals] = useState<Deal[]>([])
-  const [stages, setStages] = useState<PipelineStage[]>([])
+  const [stages, setStages] = useState<EtapaFunil[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [search, setSearch] = useState('')
   const [stageFilter, setStageFilter] = useState<string>('all')
@@ -67,7 +67,7 @@ export default function Deals() {
     const matchesSearch =
       deal.title.toLowerCase().includes(search.toLowerCase()) ||
       (deal.expand?.contact?.name || '').toLowerCase().includes(search.toLowerCase())
-    const matchesStage = stageFilter === 'all' || deal.stage === stageFilter
+    const matchesStage = stageFilter === 'all' || deal.etapa === stageFilter
     const matchesPriority = priorityFilter === 'all' || deal.priority === priorityFilter
 
     return matchesSearch && matchesStage && matchesPriority
@@ -111,7 +111,7 @@ export default function Deals() {
               <SelectItem value="all">Todas as etapas</SelectItem>
               {stages.map((st) => (
                 <SelectItem key={st.id} value={st.id}>
-                  {st.name}
+                  {st.nome}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -164,17 +164,27 @@ export default function Deals() {
                       {deal.expand?.contact?.name || 'N/A'}
                     </td>
                     <td className="p-4">
-                      {deal.expand?.stage && (
-                        <span
-                          className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                          style={{
-                            backgroundColor: `${deal.expand.stage.color}15`,
-                            color: deal.expand.stage.color,
-                          }}
-                        >
-                          {deal.expand.stage.name}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {deal.expand?.etapa && (
+                          <span
+                            className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                            style={{
+                              backgroundColor: `${deal.expand.etapa.cor || '#0F766E'}15`,
+                              color: deal.expand.etapa.cor || '#0F766E',
+                            }}
+                          >
+                            {deal.expand.etapa.nome}
+                          </span>
+                        )}
+                        {deal.expand?.etapa_anterior && (
+                          <span
+                            className="inline-block px-2 py-1 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700"
+                            title="Etapa em que o negócio parou"
+                          >
+                            parou em: {deal.expand.etapa_anterior.nome}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       <Badge

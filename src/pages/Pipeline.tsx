@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getPipelineStages } from '@/services/pipeline_stages'
 import { getDeals, updateDeal } from '@/services/deals'
 import { getContacts } from '@/services/contacts'
-import { PipelineStage, Deal, Contact } from '@/types/crm'
+import { EtapaFunil, Deal, Contact, DealStatus } from '@/types/crm'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +13,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
 export default function Pipeline() {
-  const [stages, setStages] = useState<PipelineStage[]>([])
+  const [stages, setStages] = useState<EtapaFunil[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [dealModalOpen, setDealModalOpen] = useState(false)
@@ -60,12 +60,12 @@ export default function Pipeline() {
     if (!dealId) return
 
     const currentDeal = deals.find((d) => d.id === dealId)
-    if (!currentDeal || currentDeal.stage === targetStageId) return
+    if (!currentDeal || currentDeal.etapa === targetStageId) return
 
-    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, stage: targetStageId } : d)))
+    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, etapa: targetStageId } : d)))
 
     try {
-      await updateDeal(dealId, { stage: targetStageId })
+      await updateDeal(dealId, { etapa: targetStageId })
       toast.success('Etapa do negócio atualizada!')
     } catch (_) {
       toast.error('Erro ao atualizar etapa.')
@@ -73,6 +73,18 @@ export default function Pipeline() {
     } finally {
       setDraggedDealId(null)
     }
+  }
+
+  const statusBadge: Record<DealStatus, { label: string; className: string }> = {
+    'em andamento': { label: '', className: '' },
+    ganho: {
+      label: 'Ganho',
+      className: 'bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1',
+    },
+    perdido: {
+      label: 'Perdido',
+      className: 'bg-rose-50 text-rose-700 border-rose-200 text-[10px] px-1',
+    },
   }
 
   return (
@@ -97,7 +109,7 @@ export default function Pipeline() {
 
       <div className="flex gap-4 overflow-x-auto pb-6 pt-2 items-start min-h-[calc(100vh-220px)]">
         {stages.map((stage) => {
-          const stageDeals = deals.filter((d) => d.stage === stage.id)
+          const stageDeals = deals.filter((d) => d.etapa === stage.id)
           const stageTotal = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
 
           return (
@@ -109,8 +121,11 @@ export default function Pipeline() {
             >
               <div className="p-2 pb-3 flex items-center justify-between border-b border-slate-200">
                 <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: stage.color }} />
-                  <span className="font-bold text-slate-800 text-sm">{stage.name}</span>
+                  <span
+                    className="h-3 w-3 rounded-full"
+                    style={{ backgroundColor: stage.cor || '#0F766E' }}
+                  />
+                  <span className="font-bold text-slate-800 text-sm">{stage.nome}</span>
                   <Badge
                     variant="secondary"
                     className="bg-slate-200 text-slate-700 text-[10px] px-1.5 font-bold"
@@ -143,24 +158,34 @@ export default function Pipeline() {
                     onDragStart={(e) => handleDragStart(e, deal.id)}
                     onClick={() => setSelectedDeal(deal)}
                     className="cursor-pointer border-slate-200/80 bg-white hover:border-teal-600/50 hover:shadow-md transition-all rounded-xl p-3.5 space-y-2 relative group"
-                    style={{ borderLeftWidth: '4px', borderLeftColor: stage.color }}
+                    style={{ borderLeftWidth: '4px', borderLeftColor: stage.cor || '#0F766E' }}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2">
                         {deal.title}
                       </h4>
-                      <Badge
-                        variant="outline"
-                        className={
-                          deal.priority === 'alta'
-                            ? 'bg-rose-50 text-rose-700 border-rose-200 text-[10px] px-1'
-                            : deal.priority === 'média'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1'
-                              : 'bg-slate-50 text-slate-600 border-slate-200 text-[10px] px-1'
-                        }
-                      >
-                        {deal.priority}
-                      </Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* status ganho/perdido continua visível no card */}
+                        {deal.status &&
+                          deal.status !== 'em andamento' &&
+                          statusBadge[deal.status].label && (
+                            <Badge variant="outline" className={statusBadge[deal.status].className}>
+                              {statusBadge[deal.status].label}
+                            </Badge>
+                          )}
+                        <Badge
+                          variant="outline"
+                          className={
+                            deal.priority === 'alta'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200 text-[10px] px-1'
+                              : deal.priority === 'média'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 text-[10px] px-1'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 text-[10px] px-1'
+                          }
+                        >
+                          {deal.priority}
+                        </Badge>
+                      </div>
                     </div>
 
                     {deal.expand?.contact && (

@@ -36,11 +36,34 @@ export interface PipelineStage {
   updated: string
 }
 
+// Etapa oficial do funil de SERVIÇOS (coleção "etapas_funil" no Skip Cloud).
+// Os textos (nome, objetivo, atividade, critério de saída, prazo) são editáveis
+// pela coleção — a interface lê direto dela, ordenado por "ordem", sem hardcode.
+export type DealStatus = 'em andamento' | 'ganho' | 'perdido'
+
+export interface EtapaFunil {
+  id: string
+  ordem: number
+  nome: string
+  objetivo?: string
+  atividade_principal?: string
+  criterio_saida?: string
+  prazo_alvo_dias?: number
+  cor?: string
+  created: string
+  updated: string
+}
+
 export interface Deal {
   id: string
   title: string
   value: number
   stage: string
+  // etapa oficial do funil de serviços (coleção etapas_funil)
+  etapa?: string
+  // etapa em que o negócio parou, quando status = perdido
+  etapa_anterior?: string
+  status?: DealStatus
   contact: string
   owner: string
   expected_close_date?: string
@@ -50,6 +73,8 @@ export interface Deal {
   updated: string
   expand?: {
     stage?: PipelineStage
+    etapa?: EtapaFunil
+    etapa_anterior?: EtapaFunil
     contact?: Contact
     owner?: User
   }

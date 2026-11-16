@@ -18,14 +18,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createDeal, updateDeal } from '@/services/deals'
-import { Deal, PipelineStage, Contact } from '@/types/crm'
+import { Deal, EtapaFunil, DealStatus, Contact } from '@/types/crm'
 import { toast } from 'sonner'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 
 interface DealModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  stages: PipelineStage[]
+  stages: EtapaFunil[]
   contacts: Contact[]
   dealToEdit?: Deal | null
   defaultContactId?: string
@@ -46,6 +46,7 @@ export function DealModal({
   const [title, setTitle] = useState('')
   const [value, setValue] = useState('')
   const [stageId, setStageId] = useState('')
+  const [status, setStatus] = useState<DealStatus>('em andamento')
   const [contactId, setContactId] = useState('')
   const [priority, setPriority] = useState<'baixa' | 'média' | 'alta'>('média')
   const [expectedCloseDate, setExpectedCloseDate] = useState('')
@@ -57,7 +58,8 @@ export function DealModal({
     if (dealToEdit) {
       setTitle(dealToEdit.title || '')
       setValue(dealToEdit.value ? String(dealToEdit.value) : '0')
-      setStageId(dealToEdit.stage || stages[0]?.id || '')
+      setStageId(dealToEdit.etapa || stages[0]?.id || '')
+      setStatus(dealToEdit.status || 'em andamento')
       setContactId(dealToEdit.contact || '')
       setPriority(dealToEdit.priority || 'média')
       setExpectedCloseDate(
@@ -68,6 +70,7 @@ export function DealModal({
       setTitle('')
       setValue('')
       setStageId(defaultStageId || stages[0]?.id || '')
+      setStatus('em andamento')
       setContactId(defaultContactId || contacts[0]?.id || '')
       setPriority('média')
       setExpectedCloseDate('')
@@ -86,10 +89,16 @@ export function DealModal({
         title: title.trim(),
         value: value ? Number(value) : 0,
         stage: stageId,
+        etapa: stageId,
+        status,
         contact: contactId,
         priority,
         notes: notes.trim(),
         expected_close_date: expectedCloseDate ? `${expectedCloseDate} 00:00:00.000Z` : undefined,
+      }
+      // "Perdido" não é mais etapa: guarda a etapa em que o negócio parou.
+      if (status === 'perdido' && stageId) {
+        payload.etapa_anterior = stageId
       }
 
       if (dealToEdit) {
@@ -182,11 +191,12 @@ export function DealModal({
                 <SelectContent>
                   {stages.map((st) => (
                     <SelectItem key={st.id} value={st.id}>
-                      {st.name}
+                      {st.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {errors.etapa && <p className="text-xs text-rose-500">{errors.etapa}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -212,16 +222,35 @@ export function DealModal({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="expected_close_date" className="text-slate-700 font-semibold text-xs">
-              Fechamento Previsto
-            </Label>
-            <Input
-              id="expected_close_date"
-              type="date"
-              value={expectedCloseDate}
-              onChange={(e) => setExpectedCloseDate(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="status" className="text-slate-700 font-semibold text-xs">
+                Status
+              </Label>
+              {/* "Perdido" não é etapa: ao salvar, a etapa escolhida é guardada em etapa_anterior */}
+              <Select value={status} onValueChange={(val: DealStatus) => setStatus(val)}>
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="em andamento">Em andamento</SelectItem>
+                  <SelectItem value="ganho">Ganho</SelectItem>
+                  <SelectItem value="perdido">Perdido</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="expected_close_date" className="text-slate-700 font-semibold text-xs">
+                Fechamento Previsto
+              </Label>
+              <Input
+                id="expected_close_date"
+                type="date"
+                value={expectedCloseDate}
+                onChange={(e) => setExpectedCloseDate(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">

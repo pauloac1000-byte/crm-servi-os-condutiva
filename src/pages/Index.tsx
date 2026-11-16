@@ -6,7 +6,7 @@ import { getDeals } from '@/services/deals'
 import { getPipelineStages } from '@/services/pipeline_stages'
 import { getActivities, toggleActivityStatus } from '@/services/activities'
 import { getContacts } from '@/services/contacts'
-import { Deal, PipelineStage, Activity, Contact } from '@/types/crm'
+import { Deal, EtapaFunil, Activity, Contact } from '@/types/crm'
 import {
   DollarSign,
   Briefcase,
@@ -24,7 +24,7 @@ import { toast } from 'sonner'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
-  const [stages, setStages] = useState<PipelineStage[]>([])
+  const [stages, setStages] = useState<EtapaFunil[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [dealModalOpen, setDealModalOpen] = useState(false)
@@ -61,20 +61,19 @@ export default function Index() {
       maximumFractionDigits: 0,
     }).format(val)
 
-  const wonStageId = stages.find((s) => s.name.toLowerCase().includes('ganho'))?.id
-  const lostStageId = stages.find((s) => s.name.toLowerCase().includes('perdido'))?.id
-
+  // status do negócio (em andamento / ganho / perdido) substitui as antigas
+  // etapas "Fechado/Ganho" e "Fechado/Perdido"
   const totalWonRevenue = deals
-    .filter((d) => d.stage === wonStageId)
+    .filter((d) => d.status === 'ganho')
     .reduce((sum, d) => sum + (d.value || 0), 0)
 
-  const openDeals = deals.filter((d) => d.stage !== wonStageId && d.stage !== lostStageId)
+  const openDeals = deals.filter((d) => d.status !== 'ganho' && d.status !== 'perdido')
   const totalPipelineValue = openDeals.reduce((sum, d) => sum + (d.value || 0), 0)
 
   const totalClosedCount = deals.filter(
-    (d) => d.stage === wonStageId || d.stage === lostStageId,
+    (d) => d.status === 'ganho' || d.status === 'perdido',
   ).length
-  const wonCount = deals.filter((d) => d.stage === wonStageId).length
+  const wonCount = deals.filter((d) => d.status === 'ganho').length
   const conversionRate = totalClosedCount > 0 ? Math.round((wonCount / totalClosedCount) * 100) : 0
 
   const pendingActivities = activities.filter((a) => a.status === 'pendente').slice(0, 5)
@@ -201,11 +200,11 @@ export default function Index() {
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
             {stages.map((stage) => {
-              const stageDeals = deals.filter((d) => d.stage === stage.id)
+              const stageDeals = deals.filter((d) => d.etapa === stage.id)
               const stageValue = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
               const maxVal = Math.max(
                 ...stages.map((st) =>
-                  deals.filter((d) => d.stage === st.id).reduce((s, x) => s + (x.value || 0), 0),
+                  deals.filter((d) => d.etapa === st.id).reduce((s, x) => s + (x.value || 0), 0),
                 ),
                 1,
               )
@@ -217,16 +216,16 @@ export default function Index() {
                     <span className="flex items-center gap-2 font-semibold text-slate-800">
                       <span
                         className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: stage.color }}
+                        style={{ backgroundColor: stage.cor }}
                       />
-                      {stage.name} ({stageDeals.length})
+                      {stage.nome} ({stageDeals.length})
                     </span>
                     <span className="font-bold text-slate-900">{formatCurrency(stageValue)}</span>
                   </div>
                   <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
                     <div
                       className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${Math.max(pct, 4)}%`, backgroundColor: stage.color }}
+                      style={{ width: `${Math.max(pct, 4)}%`, backgroundColor: stage.cor }}
                     />
                   </div>
                 </div>
@@ -309,15 +308,20 @@ export default function Index() {
                       {deal.expand?.contact?.name || 'N/A'}
                     </td>
                     <td className="p-3">
-                      {deal.expand?.stage && (
+                      {deal.expand?.etapa && (
                         <span
                           className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
                           style={{
-                            backgroundColor: `${deal.expand.stage.color}15`,
-                            color: deal.expand.stage.color,
+                            backgroundColor: `${deal.expand.etapa.cor}15`,
+                            color: deal.expand.etapa.cor,
                           }}
                         >
-                          {deal.expand.stage.name}
+                          {deal.expand.etapa.nome}
+                        </span>
+                      )}
+                      {deal.expand?.etapa_anterior && (
+                        <span className="ml-1 inline-block px-2 py-1 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700">
+                          parou em: {deal.expand.etapa_anterior.nome}
                         </span>
                       )}
                     </td>

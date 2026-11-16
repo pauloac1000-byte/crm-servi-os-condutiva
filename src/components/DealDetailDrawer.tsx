@@ -49,7 +49,8 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
   if (!deal) return null
 
   const contact = deal.expand?.contact
-  const stage = deal.expand?.stage
+  const stage = deal.expand?.etapa
+  const etapaAnterior = deal.expand?.etapa_anterior
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -71,11 +72,16 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
           <div className="flex items-center gap-2 mb-1">
             <span
               className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: stage?.color || '#0F766E' }}
+              style={{ backgroundColor: stage?.cor || '#0F766E' }}
             />
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              {stage?.name || 'Etapa não definida'}
+              {stage?.nome || 'Etapa não definida'}
             </span>
+            {etapaAnterior && (
+              <span className="text-[10px] font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-full px-2 py-0.5 normal-case">
+                parou em: {etapaAnterior.nome}
+              </span>
+            )}
           </div>
           <SheetTitle className="text-xl font-bold text-slate-900 leading-tight">
             {deal.title}
