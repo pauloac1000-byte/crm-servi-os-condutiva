@@ -11,6 +11,10 @@ import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
+import { useAuth } from '@/hooks/use-auth'
+import { isProximaEtapa, isCriterioCumprido, MSG_CRITERIO_PENDENTE } from '@/lib/criterio-saida'
+import { ForcarAvancoDialog } from '@/components/ForcarAvancoDialog'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 export default function Pipeline() {
   const [stages, setStages] = useState<EtapaFunil[]>([])
@@ -20,6 +24,11 @@ export default function Pipeline() {
   const [selectedStageForNew, setSelectedStageForNew] = useState<string>('')
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null)
+  const { isAdmin } = useAuth()
+  const [forcar, setForcar] = useState<{
+    deal: Deal
+    destino: string
+  } | null>(null)
 
   const loadPipelineData = async () => {
     try {
@@ -62,13 +71,47 @@ export default function Pipeline() {
     const currentDeal = deals.find((d) => d.id === dealId)
     if (!currentDeal || currentDeal.etapa === targetStageId) return
 
-    setDeals((prev) => prev.map((d) => (d.id === dealId ? { ...d, etapa: targetStageId } : d)))
+    const etapaAtual = stages.find((s) => s.id === currentDeal.etapa)
+    const etapaDestino = stages.find((s) => s.id === targetStageId)
 
+    // Bloqueio do critério de saída: só vale para avanço para a etapa seguinte
+    if (
+      isProximaEtapa(etapaAtual, etapaDestino) &&
+      currentDeal.status !== 'perdido' &&
+      !isCriterioCumprido(etapaAtual, currentDeal)
+    ) {
+      setDraggedDealId(null)
+      if (isAdmin) {
+        setForcar({ deal: currentDeal, destino: targetStageId })
+      } else {
+        toast.error(MSG_CRITERIO_PENDENTE)
+      }
+      return
+    }
+
+    await moverDeal(currentDeal, targetStageId)
+  }
+
+  const moverDeal = async (
+    currentDeal: Deal,
+    targetStageId: string,
+    extras?: { forcar_avanco?: boolean; justificativa_avanco?: string },
+  ) => {
     try {
-      await updateDeal(dealId, { etapa: targetStageId })
+      setDeals((prev) =>
+        prev.map((d) => (d.id === currentDeal.id ? { ...d, etapa: targetStageId } : d)),
+      )
+      await updateDeal(currentDeal.id, {
+        etapa: targetStageId,
+        ...extras,
+      })
       toast.success('Etapa do negócio atualizada!')
-    } catch (_) {
-      toast.error('Erro ao atualizar etapa.')
+    } catch (err) {
+      // O backend também valida — respeita a mensagem exata do bloqueio
+      const msg = getErrorMessage(err)
+      const msgFinal =
+        msg === MSG_CRITERIO_PENDENTE ? MSG_CRITERIO_PENDENTE : msg || 'Erro ao atualizar etapa.'
+      toast.error(msgFinal)
       loadPipelineData()
     } finally {
       setDraggedDealId(null)
@@ -228,6 +271,21 @@ export default function Pipeline() {
         open={!!selectedDeal}
         onClose={() => setSelectedDeal(null)}
         onUpdated={loadPipelineData}
+      />
+
+      {/* Admin: forçar avanço sem o critério cumprido, com justificativa */}
+      <ForcarAvancoDialog
+        open={!!forcar}
+        onOpenChange={(open) => !open && setForcar(null)}
+        etapaAtualNome={stages.find((s) => s.id === forcar?.deal.etapa)?.nome}
+        etapaDestinoNome={stages.find((s) => s.id === forcar?.destino)?.nome}
+        onConfirm={async (justificativa) => {
+          if (!forcar) return
+          await moverDeal(forcar.deal, forcar.destino, {
+            forcar_avanco: true,
+            justificativa_avanco: justificativa,
+          })
+        }}
       />
     </div>
   )

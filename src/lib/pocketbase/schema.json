@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T17:37:41.302Z",
+  "generatedAt": "2026-11-16T17:55:29.338Z",
   "collections": [
     {
       "name": "users",
@@ -287,6 +287,24 @@
           "required": false,
           "system": false,
           "collectionRef": "etapas_funil"
+        },
+        {
+          "name": "criterio_marcados",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "justificativa_avanco",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "forcar_avanco",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -445,9 +463,99 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "criterio_itens",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE INDEX idx_etapas_funil_ordem ON etapas_funil (ordem)"]
+    },
+    {
+      "name": "historico_negocios",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && owner = @request.auth.id",
+        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "create": "@request.auth.id != '' && owner = @request.auth.id",
+        "update": "@request.auth.id != '' && owner = @request.auth.id",
+        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "deal",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "deals"
+        },
+        {
+          "name": "owner",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["avanco", "avanco_forcado", "criacao", "perda", "ganho", "outro"]
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "etapa_de",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "etapas_funil"
+        },
+        {
+          "name": "etapa_para",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "etapas_funil"
+        },
+        {
+          "name": "justificativa",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_historico_negocios_deal ON historico_negocios (deal)",
+        "CREATE INDEX idx_historico_negocios_owner ON historico_negocios (owner)"
+      ]
     }
   ]
 }

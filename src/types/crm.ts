@@ -48,6 +48,8 @@ export interface EtapaFunil {
   objetivo?: string
   atividade_principal?: string
   criterio_saida?: string
+  // itens do critério de saída — um por caixa de confirmação na tela do negócio
+  criterio_itens?: string[]
   prazo_alvo_dias?: number
   cor?: string
   created: string
@@ -66,6 +68,12 @@ export interface Deal {
   status?: DealStatus
   contact: string
   owner: string
+  // itens do critério de saída da etapa atual já confirmados (texto do item)
+  criterio_marcados?: string[]
+  // justificativa gravada quando o admin força o avanço de etapa
+  justificativa_avanco?: string
+  // sinaliza ao hook do backend que o admin está forçando o avanço (não é exibido)
+  forcar_avanco?: boolean
   expected_close_date?: string
   priority: 'baixa' | 'média' | 'alta'
   notes?: string
@@ -76,6 +84,26 @@ export interface Deal {
     etapa?: EtapaFunil
     etapa_anterior?: EtapaFunil
     contact?: Contact
+    owner?: User
+  }
+}
+
+// Entrada do histórico do negócio (coleção "historico_negocios" no Skip Cloud)
+export interface HistoricoNegocio {
+  id: string
+  deal: string
+  owner?: string
+  tipo: 'avanco' | 'avanco_forcado' | 'criacao' | 'perda' | 'ganho' | 'outro'
+  titulo?: string
+  descricao?: string
+  etapa_de?: string
+  etapa_para?: string
+  justificativa?: string
+  created: string
+  updated: string
+  expand?: {
+    etapa_de?: EtapaFunil
+    etapa_para?: EtapaFunil
     owner?: User
   }
 }

@@ -20,7 +20,10 @@ import {
 import { createDeal, updateDeal } from '@/services/deals'
 import { Deal, EtapaFunil, DealStatus, Contact } from '@/types/crm'
 import { toast } from 'sonner'
-import { extractFieldErrors } from '@/lib/pocketbase/errors'
+import { extractFieldErrors, getErrorMessage } from '@/lib/pocketbase/errors'
+import { useAuth } from '@/hooks/use-auth'
+import { isProximaEtapa, isCriterioCumprido, MSG_CRITERIO_PENDENTE } from '@/lib/criterio-saida'
+import { AlertTriangle } from 'lucide-react'
 
 interface DealModalProps {
   open: boolean
@@ -53,6 +56,18 @@ export function DealModal({
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [justificativa, setJustificativa] = useState('')
+  const { isAdmin } = useAuth()
+
+  // Etapa de origem do negócio em edição e o estado do bloqueio do critério
+  const etapaOrigem = dealToEdit ? stages.find((s) => s.id === dealToEdit.etapa) : undefined
+  const etapaDestino = stages.find((s) => s.id === stageId)
+  const avançoSemCritério =
+    !!dealToEdit &&
+    dealToEdit.status !== 'perdido' &&
+    isProximaEtapa(etapaOrigem, etapaDestino) &&
+    !isCriterioCumprido(etapaOrigem, dealToEdit)
+  const avançoPermitido = !avançoSemCritério || (isAdmin && justificativa.trim() !== '')
 
   useEffect(() => {
     if (dealToEdit) {
@@ -79,6 +94,11 @@ export function DealModal({
     setErrors({})
   }, [dealToEdit, open, stages, contacts, defaultContactId, defaultStageId])
 
+  // Limpa a justificativa de forçar avanço ao abrir/fechar o modal
+  useEffect(() => {
+    setJustificativa('')
+  }, [open, dealToEdit])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -102,6 +122,11 @@ export function DealModal({
       }
 
       if (dealToEdit) {
+        // Força o avanço quando o admin salva com justificativa sem critério cumprido
+        if (avançoSemCritério && isAdmin) {
+          payload.forcar_avanco = true
+          payload.justificativa_avanco = justificativa.trim()
+        }
         await updateDeal(dealToEdit.id, payload)
         toast.success('Negócio atualizado com sucesso!')
       } else {
@@ -116,7 +141,7 @@ export function DealModal({
       if (Object.keys(fieldErrors).length > 0) {
         setErrors(fieldErrors)
       } else {
-        toast.error('Ocorreu um erro ao salvar o negócio.')
+        toast.error(getErrorMessage(err) || 'Ocorreu um erro ao salvar o negócio.')
       }
     } finally {
       setLoading(false)
@@ -253,6 +278,38 @@ export function DealModal({
             </div>
           </div>
 
+          {/* Bloqueio do critério de saída no avanço pela edição */}
+          {avançoSemCritério && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                {MSG_CRITERIO_PENDENTE}
+              </p>
+              {isAdmin ? (
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="justificativa_avanco"
+                    className="text-amber-800 font-semibold text-xs"
+                  >
+                    Justificativa do administrador (obrigatória para forçar o avanço)
+                  </Label>
+                  <Textarea
+                    id="justificativa_avanco"
+                    rows={3}
+                    placeholder="Descreva a justificativa para forçar o avanço…"
+                    value={justificativa}
+                    onChange={(e) => setJustificativa(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-amber-700">
+                  Confirme os itens do critério na tela do negócio ou peça ao administrador para
+                  forçar o avanço.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="notes" className="text-slate-700 font-semibold text-xs">
               Observações
@@ -272,7 +329,7 @@ export function DealModal({
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || !avançoPermitido}
               className="bg-teal-700 hover:bg-teal-800 text-white font-semibold"
             >
               {loading ? 'Salvando...' : dealToEdit ? 'Atualizar' : 'Criar Negócio'}

@@ -17,6 +17,8 @@ import {
   MapPin,
 } from 'lucide-react'
 import { ActivityModal } from '@/components/ActivityModal'
+import { CriterioSaidaBloco } from '@/components/CriterioSaidaBloco'
+import { HistoricoBloco } from '@/components/HistoricoBloco'
 import { toast } from 'sonner'
 
 interface DealDetailDrawerProps {
@@ -29,6 +31,7 @@ interface DealDetailDrawerProps {
 export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailDrawerProps) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [newActivityOpen, setNewActivityOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const loadActivities = async () => {
     if (!deal) return
@@ -43,6 +46,7 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
   useEffect(() => {
     if (open && deal) {
       loadActivities()
+      setRefreshKey((k) => k + 1)
     }
   }, [open, deal])
 
@@ -142,6 +146,12 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
               <p className="text-xs text-slate-400 italic">Nenhum contato vinculado.</p>
             )}
           </div>
+
+          {/* Critério de saída desta etapa — caixas por item, persistidas no Skip Cloud */}
+          <CriterioSaidaBloco deal={deal} etapa={stage} onUpdated={onUpdated} />
+
+          {/* Histórico do negócio (avanços, avanços forçados com justificativa) */}
+          <HistoricoBloco deal={deal} refreshKey={refreshKey} />
 
           <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-2">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
