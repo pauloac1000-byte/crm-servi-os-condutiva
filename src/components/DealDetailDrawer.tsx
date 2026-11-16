@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Deal, Activity } from '@/types/crm'
+import { Deal, Activity, VisitaComercial } from '@/types/crm'
 import { getActivities, toggleActivityStatus } from '@/services/activities'
+import { getVisitas } from '@/services/visitas'
+import { VisitasBloco } from '@/components/VisitasBloco'
 import {
   Briefcase,
   Building,
@@ -31,14 +33,16 @@ interface DealDetailDrawerProps {
 
 export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailDrawerProps) {
   const [activities, setActivities] = useState<Activity[]>([])
+  const [visitas, setVisitas] = useState<VisitaComercial[]>([])
   const [newActivityOpen, setNewActivityOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const loadActivities = async () => {
     if (!deal) return
     try {
-      const all = await getActivities()
+      const [all, allVisitas] = await Promise.all([getActivities(), getVisitas()])
       setActivities(all.filter((a) => a.deal === deal.id))
+      setVisitas(allVisitas.filter((v) => v.negocio === deal.id))
     } catch {
       /* intentionally ignored */
     }
@@ -156,6 +160,9 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
 
           {/* Histórico do negócio (avanços, avanços forçados com justificativa) */}
           <HistoricoBloco deal={deal} refreshKey={refreshKey} />
+
+          {/* Visitas comerciais vinculadas + custo acumulado do negócio */}
+          <VisitasBloco visitas={visitas} />
 
           <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-2">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">

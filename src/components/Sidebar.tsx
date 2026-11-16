@@ -6,6 +6,7 @@ import {
   Briefcase,
   Users,
   CheckCircle2,
+  Car,
   ShieldCheck,
   LogOut,
 } from 'lucide-react'
@@ -28,6 +29,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     { label: 'Negócios', path: '/deals', icon: Briefcase },
     { label: 'Contatos', path: '/contacts', icon: Users },
     { label: 'Atividades', path: '/activities', icon: CheckCircle2 },
+    { label: 'Visitas', path: '/visitas', icon: Car },
     ...(isAdmin ? [{ label: 'Usuários', path: '/users', icon: ShieldCheck }] : []),
   ]
 

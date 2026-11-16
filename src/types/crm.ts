@@ -112,6 +112,34 @@ export interface HistoricoNegocio {
   }
 }
 
+// Visita comercial registrada para gerar ou avançar leads
+// (coleção "visitas_comerciais" no Skip Cloud). custo_total é calculado
+// no servidor (hook), somando os valores monetários da visita.
+export interface VisitaComercial {
+  id: string
+  data?: string
+  contato?: string
+  negocio?: string
+  responsavel?: string
+  tipo?: 'presencial' | 'remota'
+  km_rodados?: number
+  valor_combustivel?: number
+  pedagio?: number
+  alimentacao?: number
+  hospedagem?: number
+  horas_dedicadas?: number
+  outros_custos?: number
+  resultado?: string
+  custo_total?: number
+  created: string
+  updated: string
+  expand?: {
+    contato?: Contact
+    negocio?: Deal
+    responsavel?: User
+  }
+}
+
 export interface Activity {
   id: string
   title: string

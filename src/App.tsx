@@ -11,6 +11,7 @@ import Pipeline from './pages/Pipeline'
 import Deals from './pages/Deals'
 import Contacts from './pages/Contacts'
 import Activities from './pages/Activities'
+import Visitas from './pages/Visitas'
 import UsersPage from './pages/Users'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/deals" element={<Deals />} />
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/activities" element={<Activities />} />
+              <Route path="/visitas" element={<Visitas />} />
 
               <Route element={<AdminRoute />}>
                 <Route path="/users" element={<UsersPage />} />
