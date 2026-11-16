@@ -20,7 +20,9 @@ import { VisitasModal } from '@/components/VisitasModal'
 import { ConfiguracoesModal } from '@/components/ConfiguracoesModal'
 import { getConfiguracoes } from '@/services/configuracoes'
 import { useRealtime } from '@/hooks/use-realtime'
+import { useEficienciaComercial } from '@/hooks/use-eficiencia-comercial'
 import { toast } from 'sonner'
+import { TrendingUp } from 'lucide-react'
 
 export default function Visitas() {
   const { user } = useAuth()
@@ -90,6 +92,18 @@ export default function Visitas() {
     () => visitasFiltradas.reduce((soma, v) => soma + (v.custo_total || 0), 0),
     [visitasFiltradas],
   )
+
+  // Indicadores de eficiência comercial do período (dados do Skip Cloud).
+  const eficiencia = useEficienciaComercial({
+    dataDe,
+    dataAte,
+    responsavel: responsavelFiltro,
+  })
+  // recarrega os indicadores junto com os dados (tempo real)
+  useEffect(() => {
+    eficiencia.recalcular()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitas])
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -173,6 +187,58 @@ export default function Visitas() {
             {formatCurrency(custoTotalPeriodo)}
           </span>
         </div>
+      </div>
+
+      {/* Indicadores de eficiência comercial do período (sem gráfico) */}
+      <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="h-3.5 w-3.5 text-teal-700" />
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
+            Eficiência comercial — período
+          </span>
+        </div>
+        {eficiencia.carregando ? (
+          <p className="text-xs text-slate-400">Calculando indicadores…</p>
+        ) : eficiencia.erro ? (
+          <p className="text-xs text-rose-500">{eficiencia.erro}</p>
+        ) : eficiencia.dados ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <Indicador
+              rotulo="Custo por lead qualificado"
+              valor={eficiencia.dados.custoPorLeadQualificado}
+              moeda
+              base={eficiencia.dados.qtdLeadsQualificados}
+            />
+            <Indicador
+              rotulo="Custo por proposta"
+              valor={eficiencia.dados.custoPorProposta}
+              moeda
+              base={eficiencia.dados.qtdPropostas}
+            />
+            <Indicador
+              rotulo="Custo por contrato assinado"
+              valor={eficiencia.dados.custoPorContratoAssinado}
+              moeda
+              base={eficiencia.dados.qtdContratosAssinados}
+            />
+            <Indicador
+              rotulo="Custo médio por visita"
+              valor={eficiencia.dados.custoMedioPorVisita}
+              moeda
+              base={eficiencia.dados.qtdVisitas}
+            />
+            <Indicador
+              rotulo="Visitas por contrato assinado"
+              valor={eficiencia.dados.visitasPorContratoAssinado}
+              base={eficiencia.dados.qtdContratosAssinados}
+            />
+            <Indicador
+              rotulo="Custo total de prospecção"
+              valor={eficiencia.dados.custoTotalProspeccao}
+              moeda
+            />
+          </div>
+        ) : null}
       </div>
 
       {visitasFiltradas.length === 0 ? (
@@ -287,6 +353,39 @@ export default function Visitas() {
       />
 
       <ConfiguracoesModal open={configOpen} onOpenChange={setConfigOpen} onSuccess={() => {}} />
+    </div>
+  )
+}
+
+// Célula discreta de um indicador (sem gráfico; segue o visual da tela).
+function Indicador({
+  rotulo,
+  valor,
+  moeda,
+  base,
+}: {
+  rotulo: string
+  valor: number | null
+  moeda?: boolean
+  base?: number
+}) {
+  const formatar = (v: number) =>
+    moeda
+      ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+      : v.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+  return (
+    <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/70">
+      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide leading-tight">
+        {rotulo}
+      </p>
+      <p className="text-sm font-black text-slate-900 mt-0.5">
+        {valor == null ? '—' : formatar(valor)}
+      </p>
+      {typeof base === 'number' && (
+        <p className="text-[10px] text-slate-400">
+          base: {base} {base === 1 ? 'registro' : 'registros'}
+        </p>
+      )}
     </div>
   )
 }
