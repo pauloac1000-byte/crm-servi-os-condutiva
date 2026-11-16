@@ -74,6 +74,10 @@ export interface Deal {
   justificativa_avanco?: string
   // sinaliza ao hook do backend que o admin está forçando o avanço (não é exibido)
   forcar_avanco?: boolean
+  // data/hora da entrada na etapa atual (estampada automaticamente pelo hook)
+  etapa_desde?: string
+  // usuário responsável pela mudança que deu entrada na etapa atual
+  etapa_desde_usuario?: string
   expected_close_date?: string
   priority: 'baixa' | 'média' | 'alta'
   notes?: string
@@ -93,7 +97,7 @@ export interface HistoricoNegocio {
   id: string
   deal: string
   owner?: string
-  tipo: 'avanco' | 'avanco_forcado' | 'criacao' | 'perda' | 'ganho' | 'outro'
+  tipo: 'avanco' | 'avanco_forcado' | 'criacao' | 'perda' | 'ganho' | 'outro' | 'entrada_etapa'
   titulo?: string
   descricao?: string
   etapa_de?: string

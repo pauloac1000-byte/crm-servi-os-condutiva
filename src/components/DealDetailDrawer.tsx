@@ -17,6 +17,7 @@ import {
   MapPin,
 } from 'lucide-react'
 import { ActivityModal } from '@/components/ActivityModal'
+import { IndicadorEtapa } from '@/components/IndicadorEtapa'
 import { CriterioSaidaBloco } from '@/components/CriterioSaidaBloco'
 import { HistoricoBloco } from '@/components/HistoricoBloco'
 import { toast } from 'sonner'
@@ -108,6 +109,9 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
         </SheetHeader>
 
         <div className="space-y-6 pt-6">
+          {/* Tempo na etapa atual — âmbar quando passa do prazo-alvo da etapa */}
+          <IndicadorEtapa deal={deal} etapa={stage} />
+
           <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Contato Associado

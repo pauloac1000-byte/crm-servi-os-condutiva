@@ -15,6 +15,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { isProximaEtapa, isCriterioCumprido, MSG_CRITERIO_PENDENTE } from '@/lib/criterio-saida'
 import { ForcarAvancoDialog } from '@/components/ForcarAvancoDialog'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { IndicadorEtapa } from '@/components/IndicadorEtapa'
+import { diasNaEtapa } from '@/lib/dias-na-etapa'
 
 export default function Pipeline() {
   const [stages, setStages] = useState<EtapaFunil[]>([])
@@ -152,7 +154,18 @@ export default function Pipeline() {
 
       <div className="flex gap-4 overflow-x-auto pb-6 pt-2 items-start min-h-[calc(100vh-220px)]">
         {stages.map((stage) => {
-          const stageDeals = deals.filter((d) => d.etapa === stage.id)
+          // Parado há mais tempo no topo (maior tempo na etapa primeiro);
+          // sem data conhecida, cai para o fim em ordem de criação.
+          const stageDeals = deals
+            .filter((d) => d.etapa === stage.id)
+            .sort((a, b) => {
+              const da = diasNaEtapa(a)
+              const db = diasNaEtapa(b)
+              if (da === null && db === null) return a.created < b.created ? -1 : 1
+              if (da === null) return 1
+              if (db === null) return -1
+              return db - da
+            })
           const stageTotal = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
 
           return (
@@ -237,6 +250,8 @@ export default function Pipeline() {
                         <span className="truncate">{deal.expand.contact.name}</span>
                       </p>
                     )}
+
+                    <IndicadorEtapa deal={deal} etapa={stage} />
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                       <span className="font-extrabold text-teal-700">
