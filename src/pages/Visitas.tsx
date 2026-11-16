@@ -15,8 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Car, Trash2, Edit2, MapPin, Clock, Briefcase } from 'lucide-react'
+import { Plus, Car, Trash2, Edit2, MapPin, Clock, Briefcase, Settings } from 'lucide-react'
 import { VisitasModal } from '@/components/VisitasModal'
+import { ConfiguracoesModal } from '@/components/ConfiguracoesModal'
+import { getConfiguracoes } from '@/services/configuracoes'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
@@ -28,6 +30,9 @@ export default function Visitas() {
   const [users, setUsers] = useState<User[]>([])
   const [modalOpen, setModalOpen] = useState(false)
   const [visitaToEdit, setVisitaToEdit] = useState<VisitaComercial | null>(null)
+  const [configOpen, setConfigOpen] = useState(false)
+  const [custoHora, setCustoHora] = useState(90)
+  const isAdmin = user?.role === 'admin'
 
   // Filtros: período (intervalo de datas) e responsável
   const [dataDe, setDataDe] = useState('')
@@ -48,6 +53,14 @@ export default function Visitas() {
 
   useEffect(() => {
     loadData()
+    getConfiguracoes()
+      .then((c) => {
+        if (c && typeof c.custo_hora_comercial === 'number' && c.custo_hora_comercial > 0)
+          setCustoHora(c.custo_hora_comercial)
+      })
+      .catch(() => {
+        /* usa o padrão */
+      })
   }, [])
 
   useRealtime('visitas_comerciais', () => loadData())
@@ -93,15 +106,26 @@ export default function Visitas() {
             Custo das visitas feitas para gerar e avançar leads
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setVisitaToEdit(null)
-            setModalOpen(true)
-          }}
-          className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Nova Visita
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              onClick={() => setConfigOpen(true)}
+              variant="outline"
+              className="font-semibold text-xs h-10"
+            >
+              <Settings className="mr-1.5 h-4 w-4" /> Configurações
+            </Button>
+          )}
+          <Button
+            onClick={() => {
+              setVisitaToEdit(null)
+              setModalOpen(true)
+            }}
+            className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Nova Visita
+          </Button>
+        </div>
       </div>
 
       {/* Filtros: período e responsável */}
@@ -199,6 +223,23 @@ export default function Visitas() {
                     {!!v.horas_dedicadas && <span>{v.horas_dedicadas} h</span>}
                   </div>
 
+                  {/* Composição do custo */}
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                    {!!v.valor_combustivel && (
+                      <span>Combustível: {formatCurrency(v.valor_combustivel)}</span>
+                    )}
+                    {!!v.pedagio && <span>Pedágio: {formatCurrency(v.pedagio)}</span>}
+                    {!!v.alimentacao && <span>Alimentação: {formatCurrency(v.alimentacao)}</span>}
+                    {!!v.hospedagem && <span>Hospedagem: {formatCurrency(v.hospedagem)}</span>}
+                    {!!v.outros_custos && <span>Outros: {formatCurrency(v.outros_custos)}</span>}
+                    {!!v.horas_dedicadas && (
+                      <span className="text-slate-600 font-medium">
+                        Horas ({v.horas_dedicadas} h × {formatCurrency(custoHora)}):{' '}
+                        {formatCurrency(v.horas_dedicadas * custoHora)}
+                      </span>
+                    )}
+                  </div>
+
                   {v.resultado && (
                     <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{v.resultado}</p>
                   )}
@@ -244,6 +285,8 @@ export default function Visitas() {
         defaultResponsavelId={user?.id}
         onSuccess={loadData}
       />
+
+      <ConfiguracoesModal open={configOpen} onOpenChange={setConfigOpen} onSuccess={() => {}} />
     </div>
   )
 }

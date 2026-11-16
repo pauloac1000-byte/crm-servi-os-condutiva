@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createVisita, updateVisita } from '@/services/visitas'
+import { getConfiguracoes } from '@/services/configuracoes'
 import { VisitaComercial, Contact, Deal, User } from '@/types/crm'
 import { toast } from 'sonner'
 
@@ -71,6 +72,29 @@ export function VisitasModal({
 }: VisitasModalProps) {
   const [valores, setValores] = useState(VALORES_INICIAIS)
   const [loading, setLoading] = useState(false)
+  const [custoKm, setCustoKm] = useState(2.5)
+  const [custoHora, setCustoHora] = useState(90)
+  // marca se o valor do combustível foi corrigido manualmente pelo usuário
+  // (nesse caso, mudar o km NÃO sobrescreve o valor sem aviso)
+  const [combustivelManual, setCombustivelManual] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    let ativo = true
+    getConfiguracoes()
+      .then((c) => {
+        if (!ativo || !c) return
+        if (typeof c.custo_km === 'number' && c.custo_km > 0) setCustoKm(c.custo_km)
+        if (typeof c.custo_hora_comercial === 'number' && c.custo_hora_comercial > 0)
+          setCustoHora(c.custo_hora_comercial)
+      })
+      .catch(() => {
+        /* sem configurações acessíveis: usa os padrões */
+      })
+    return () => {
+      ativo = false
+    }
+  }, [open])
 
   useEffect(() => {
     if (visitaToEdit) {
@@ -101,6 +125,16 @@ export function VisitasModal({
 
   const set = (campo: keyof typeof VALORES_INICIAIS, valor: string) =>
     setValores((v) => ({ ...v, [campo]: valor }))
+
+  // Ao alterar o km, pré-preenche o combustível (km × custo por km) — mas só
+  // enquanto o usuário não tiver corrigido o valor manualmente.
+  const setKm = (valor: string) => {
+    setValores((v) => {
+      const km = toNum(valor)
+      const combustivel = combustivelManual ? v.valor_combustivel : (km * custoKm).toFixed(2)
+      return { ...v, km_rodados: valor, valor_combustivel: combustivel }
+    })
+  }
 
   const custoCalculado =
     toNum(valores.valor_combustivel) +
@@ -150,10 +184,13 @@ export function VisitasModal({
     }
   }
 
+  const custoHorasCalculado = toNum(valores.horas_dedicadas) * custoHora
+
   const campoMoeda = (
     campo: 'valor_combustivel' | 'pedagio' | 'alimentacao' | 'hospedagem' | 'outros_custos',
     rotulo: string,
     id: string,
+    aoDigitar?: () => void,
   ) => (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-slate-700 font-semibold text-xs">
@@ -166,7 +203,10 @@ export function VisitasModal({
         step="0.01"
         placeholder="0,00"
         value={valores[campo]}
-        onChange={(e) => set(campo, e.target.value)}
+        onChange={(e) => {
+          aoDigitar?.()
+          set(campo, e.target.value)
+        }}
       />
     </div>
   )
@@ -282,7 +322,7 @@ export function VisitasModal({
                 step="0.1"
                 placeholder="0"
                 value={valores.km_rodados}
-                onChange={(e) => set('km_rodados', e.target.value)}
+                onChange={(e) => setKm(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
@@ -302,7 +342,9 @@ export function VisitasModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {campoMoeda('valor_combustivel', 'Valor do Combustível', 'v_combustivel')}
+            {campoMoeda('valor_combustivel', 'Valor do Combustível', 'v_combustivel', () =>
+              setCombustivelManual(true),
+            )}
             {campoMoeda('pedagio', 'Pedágio', 'v_pedagio')}
             {campoMoeda('alimentacao', 'Alimentação', 'v_alimentacao')}
             {campoMoeda('hospedagem', 'Hospedagem', 'v_hospedagem')}
@@ -310,13 +352,53 @@ export function VisitasModal({
 
           {campoMoeda('outros_custos', 'Outros Custos', 'v_outros')}
 
-          <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200">
-            <span className="text-xs font-bold text-teal-800 uppercase tracking-wider">
-              Custo Total
-            </span>
-            <span className="text-sm font-black text-teal-700">
-              {formatCurrency(custoCalculado)}
-            </span>
+          {/* Composição do custo da visita */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+              Composição do custo
+            </p>
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span>Deslocamento (combustível)</span>
+              <span>{formatCurrency(toNum(valores.valor_combustivel))}</span>
+            </div>
+            {!!toNum(valores.pedagio) && (
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span>Pedágio</span>
+                <span>{formatCurrency(toNum(valores.pedagio))}</span>
+              </div>
+            )}
+            {!!toNum(valores.alimentacao) && (
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span>Alimentação</span>
+                <span>{formatCurrency(toNum(valores.alimentacao))}</span>
+              </div>
+            )}
+            {!!toNum(valores.hospedagem) && (
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span>Hospedagem</span>
+                <span>{formatCurrency(toNum(valores.hospedagem))}</span>
+              </div>
+            )}
+            {!!toNum(valores.outros_custos) && (
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span>Outros</span>
+                <span>{formatCurrency(toNum(valores.outros_custos))}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs text-slate-600">
+              <span>
+                Horas ({valores.horas_dedicadas || 0} h × {formatCurrency(custoHora)})
+              </span>
+              <span>{formatCurrency(custoHorasCalculado)}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
+              <span className="text-xs font-bold text-teal-800 uppercase tracking-wider">
+                Custo Total
+              </span>
+              <span className="text-sm font-black text-teal-700">
+                {formatCurrency(custoCalculado + custoHorasCalculado)}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1.5">
