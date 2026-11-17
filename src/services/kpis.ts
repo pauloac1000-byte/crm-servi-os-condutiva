@@ -272,15 +272,21 @@ const metaDe = (metas: Meta[], kpi: KpiUnidade, mes: number | undefined) => {
 
 const classificarSituacao = (kpi: KpiUnidade, atingimento: number | null): KpiSituacao => {
   if (atingimento === null) return null
-  if (kpi === 'NRR') {
-    // NRR: >100% verde, exatamente 100% âmbar, <100% vermelho
-    if (atingimento > 100) return 'verde'
-    if (atingimento === 100) return 'ambar'
-    return 'vermelho'
-  }
+  if (kpi === 'NRR') return situacaoNrr(atingimento)
   // regra geral: >=100% verde, 80 a <100% âmbar, <80% vermelho
   if (atingimento >= 100) return 'verde'
   if (atingimento >= 80) return 'ambar'
+  return 'vermelho'
+}
+
+// Regra de situação do NRR (faixas próprias): >100% verde, exatamente 100%
+// âmbar, <100% vermelho; null (indeterminado) sem valor apurável. Exportada
+// para reuso pelos blocos que tratam de NRR (ex. mrr-nrr.ts) — fonte única
+// da regra.
+export function situacaoNrr(valor: number | null): KpiSituacao {
+  if (valor === null) return null
+  if (valor > 100) return 'verde'
+  if (valor === 100) return 'ambar'
   return 'vermelho'
 }
 

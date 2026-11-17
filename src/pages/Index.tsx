@@ -26,6 +26,7 @@ import { KpisFaixa, type PeriodoFaixa } from '@/components/KpisFaixa'
 import { FunilVendas } from '@/components/FunilVendas'
 import { CustoAquisicao } from '@/components/CustoAquisicao'
 import { MetasBloco } from '@/components/MetasBloco'
+import { MrrNrrBloco } from '@/components/MrrNrrBloco'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -250,6 +251,8 @@ export default function Index() {
       <CustoAquisicao periodo={periodo} />
 
       <MetasBloco />
+
+      <MrrNrrBloco periodo={periodo} />
 
       <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
