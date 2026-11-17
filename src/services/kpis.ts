@@ -39,6 +39,15 @@ import {
 //
 // Sem base de cálculo: realizado = null e atingimento = null — quem consome
 // exibe "—".
+//
+// SITUAÇÃO (classificação contra a meta, calculada sobre o atingimento):
+// - Regra geral: atingimento >= 100% → "verde"; de 80% a <100% → "âmbar";
+//   abaixo de 80% → "vermelho".
+// - Exceção NRR (somente NRR): > 100% → "verde"; exatamente 100% → "âmbar";
+//   abaixo de 100% → "vermelho".
+// - Sem realizado ou sem meta (atingimento null) → situacao = null
+//   (indeterminado — não classificar cor de forma enganosa; quem consome
+//   exibe "—").
 
 export type KpiUnidade = Extract<
   MetaKpi,
@@ -57,7 +66,14 @@ export interface KpiResultado {
   diferenca: number | null
   // realizado ÷ meta × 100; null sem realizado ou sem meta
   atingimento: number | null
+  // situação contra a meta, pelo atingimento:
+  // geral — >=100% verde, 80–<100% âmbar, <80% vermelho;
+  // NRR — >100% verde, ==100% âmbar, <100% vermelho;
+  // null (indeterminado) sem realizado ou sem meta
+  situacao: KpiSituacao
 }
+
+export type KpiSituacao = 'verde' | 'ambar' | 'vermelho' | null
 
 export interface KpisPeriodo {
   // período normalizado usado no cálculo
@@ -254,20 +270,38 @@ const metaDe = (metas: Meta[], kpi: KpiUnidade, mes: number | undefined) => {
   return anual?.valor_meta
 }
 
+const classificarSituacao = (kpi: KpiUnidade, atingimento: number | null): KpiSituacao => {
+  if (atingimento === null) return null
+  if (kpi === 'NRR') {
+    // NRR: >100% verde, exatamente 100% âmbar, <100% vermelho
+    if (atingimento > 100) return 'verde'
+    if (atingimento === 100) return 'ambar'
+    return 'vermelho'
+  }
+  // regra geral: >=100% verde, 80 a <100% âmbar, <80% vermelho
+  if (atingimento >= 100) return 'verde'
+  if (atingimento >= 80) return 'ambar'
+  return 'vermelho'
+}
+
 const construir = (
   kpi: KpiUnidade,
   realizado: number | null,
   meta: number | undefined,
-): KpiResultado => ({
-  kpi,
-  rotulo: ROTULOS_KPIS[kpi],
-  formato: FORMATO[kpi],
-  realizado,
-  meta,
-  diferenca: realizado !== null && meta !== undefined ? realizado - meta : null,
-  atingimento:
-    realizado !== null && meta !== undefined && meta !== 0 ? (realizado / meta) * 100 : null,
-})
+): KpiResultado => {
+  const atingimento =
+    realizado !== null && meta !== undefined && meta !== 0 ? (realizado / meta) * 100 : null
+  return {
+    kpi,
+    rotulo: ROTULOS_KPIS[kpi],
+    formato: FORMATO[kpi],
+    realizado,
+    meta,
+    diferenca: realizado !== null && meta !== undefined ? realizado - meta : null,
+    atingimento,
+    situacao: classificarSituacao(kpi, atingimento),
+  }
+}
 
 // ---------- função central ----------
 
