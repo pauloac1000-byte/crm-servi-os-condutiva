@@ -204,8 +204,6 @@ export default function Index() {
           <FunilVendas periodo={periodo} />
         </div>
 
-        <CustoAquisicao periodo={periodo} />
-
         <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-bold text-slate-900">
@@ -247,6 +245,8 @@ export default function Index() {
           </CardContent>
         </Card>
       </div>
+
+      <CustoAquisicao periodo={periodo} />
 
       <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
