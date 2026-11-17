@@ -15,9 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, Plus, Trash2, Edit2, FileText, TrendingUp } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, FileText, TrendingUp, Wrench } from 'lucide-react'
 import { ContratoModal } from '@/components/ContratoModal'
 import { MovimentoReceitaModal } from '@/components/MovimentoReceitaModal'
+import { ContratoOsDrawer } from '@/components/ContratoOsDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
@@ -36,6 +37,8 @@ export default function Contratos() {
   const [movimentos, setMovimentos] = useState<MovimentoReceita[]>([])
   const [movModalOpen, setMovModalOpen] = useState(false)
   const [competenciaModal, setCompetenciaModal] = useState<string | undefined>(undefined)
+  // Drawer de OS vinculadas ao contrato selecionado
+  const [osContrato, setOsContrato] = useState<Contrato | null>(null)
 
   const loadData = async () => {
     try {
@@ -265,6 +268,15 @@ export default function Contratos() {
                 size="sm"
                 variant="ghost"
                 className="h-8 w-8 p-0 text-slate-500 hover:text-teal-700 hover:bg-teal-50"
+                onClick={() => setOsContrato(c)}
+                aria-label={`Ver ordens de serviço de ${c.expand?.cliente?.name || 'cliente'}`}
+              >
+                <Wrench className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-slate-500 hover:text-teal-700 hover:bg-teal-50"
                 onClick={(e) => {
                   setContratoToEdit(c)
                   setModalOpen(true)
@@ -370,6 +382,12 @@ export default function Contratos() {
         defaultResponsavelId={responsavelId}
         contratoToEdit={contratoToEdit}
         onSuccess={() => loadData()}
+      />
+
+      <ContratoOsDrawer
+        contrato={osContrato}
+        open={osContrato !== null}
+        onClose={() => setOsContrato(null)}
       />
 
       <MovimentoReceitaModal

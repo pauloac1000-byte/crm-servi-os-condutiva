@@ -13,6 +13,7 @@ import Contacts from './pages/Contacts'
 import Activities from './pages/Activities'
 import Visitas from './pages/Visitas'
 import Contratos from './pages/Contratos'
+import OrdensServico from './pages/OrdensServico'
 import UsersPage from './pages/Users'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/activities" element={<Activities />} />
               <Route path="/visitas" element={<Visitas />} />
               <Route path="/contratos" element={<Contratos />} />
+              <Route path="/ordens-servico" element={<OrdensServico />} />
 
               <Route element={<AdminRoute />}>
                 <Route path="/users" element={<UsersPage />} />

@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Contact, Deal, Activity, EtapaFunil, VisitaComercial } from '@/types/crm'
+import { Contact, Deal, Activity, EtapaFunil, VisitaComercial, OrdemServico } from '@/types/crm'
 import { getDeals } from '@/services/deals'
 import { getActivities } from '@/services/activities'
 import { getVisitas } from '@/services/visitas'
 import { getPipelineStages } from '@/services/pipeline_stages'
 import { VisitasBloco } from '@/components/VisitasBloco'
+import { OrdensServicoBloco } from '@/components/OrdensServicoBloco'
+import { getOrdensServico } from '@/services/ordens_servico'
 import {
   Mail,
   Phone,
   Building,
   Briefcase,
   Plus,
+  Wrench,
   PlusCircle,
   CheckCircle2,
   MapPin,
@@ -38,6 +41,7 @@ export function ContactDetailDrawer({
   const [deals, setDeals] = useState<Deal[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [visitas, setVisitas] = useState<VisitaComercial[]>([])
+  const [ordensServico, setOrdensServico] = useState<OrdemServico[]>([])
   const [stages, setStages] = useState<EtapaFunil[]>([])
   const [newDealOpen, setNewDealOpen] = useState(false)
   const [newActivityOpen, setNewActivityOpen] = useState(false)
@@ -45,16 +49,18 @@ export function ContactDetailDrawer({
   const loadData = async () => {
     if (!contact) return
     try {
-      const [allDeals, allActivities, allVisitas, allStages] = await Promise.all([
+      const [allDeals, allActivities, allVisitas, allStages, allOs] = await Promise.all([
         getDeals(),
         getActivities(),
         getVisitas(),
         getPipelineStages(),
+        getOrdensServico(`cliente='${contact.id}'`).catch(() => []),
       ])
       setDeals(allDeals.filter((d) => d.contact === contact.id))
       setActivities(allActivities.filter((a) => a.contact === contact.id))
       setVisitas(allVisitas.filter((v) => v.contato === contact.id))
       setStages(allStages)
+      setOrdensServico(allOs)
     } catch {
       /* intentionally ignored */
     }
@@ -189,6 +195,9 @@ export function ContactDetailDrawer({
 
           {/* Visitas comerciais vinculadas + custo acumulado do contato */}
           <VisitasBloco visitas={visitas} />
+
+          {/* Ordens de serviço executadas para o contato */}
+          <OrdensServicoBloco ordens={ordensServico} />
 
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
