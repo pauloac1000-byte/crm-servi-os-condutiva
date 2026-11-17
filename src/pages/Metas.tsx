@@ -11,12 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { KPIS, MESES_CURTOS, useMetas, divergenciaAnual } from '@/hooks/use-metas'
+import { useMarcoValidacao } from '@/hooks/use-marco-validacao'
 import { MetaKpi } from '@/types/crm'
 import { toast } from 'sonner'
+import { Flag } from 'lucide-react'
 
 export default function Metas() {
   const { isAdmin } = useAuth()
   const { ano, setAno, getValor, salvarValor, loading } = useMetas()
+  const marco = useMarcoValidacao()
 
   const [editando, setEditando] = useState<string | null>(null) // "kpi|mes"
   const [rascunho, setRascunho] = useState('')
@@ -260,6 +263,31 @@ export default function Metas() {
         <span>
           Um aviso “divergente” aparece quando a soma dos 12 meses difere da meta anual do KPI.
         </span>
+      </div>
+
+      {/* Marco de validação do modelo */}
+      <div
+        className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
+          marco.concluido
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-slate-200 bg-slate-50 text-slate-500'
+        }`}
+      >
+        <Flag
+          className={`h-3.5 w-3.5 ${marco.concluido ? 'text-emerald-600' : 'text-slate-400'}`}
+        />
+        <span>
+          Marco de validação do modelo — Primeiro contrato piloto assinado com RCS maior que zero:
+        </span>
+        {marco.concluido ? (
+          <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-100 rounded px-1.5 py-0.5">
+            ✓ Concluído{marco.contrato?.cliente ? ` — ${marco.contrato.cliente}` : ''}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 rounded px-1.5 py-0.5">
+            Pendente
+          </span>
+        )}
       </div>
     </div>
   )
