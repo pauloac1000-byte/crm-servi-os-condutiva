@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T14:10:37.309Z",
+  "generatedAt": "2026-11-17T19:39:50.925Z",
   "collections": [
     {
       "name": "users",
@@ -57,9 +57,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": null,
-        "update": null,
-        "delete": null
+        "create": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin'"
       },
       "fields": [
         {
@@ -101,11 +101,11 @@
       "name": "contacts",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && owner = @request.auth.id",
-        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && owner = @request.auth.id",
-        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)"
       },
       "fields": [
         {
@@ -194,11 +194,11 @@
       "name": "deals",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && owner = @request.auth.id",
-        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && owner = @request.auth.id",
-        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)"
       },
       "fields": [
         {
@@ -361,11 +361,11 @@
       "name": "activities",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && owner = @request.auth.id",
-        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && owner = @request.auth.id",
-        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)"
       },
       "fields": [
         {
@@ -447,9 +447,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": null,
-        "update": null,
-        "delete": null
+        "create": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin'"
       },
       "fields": [
         {
@@ -521,11 +521,11 @@
       "name": "historico_negocios",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && owner = @request.auth.id",
-        "view": "@request.auth.id != '' && owner = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
         "create": "@request.auth.id != '' && owner = @request.auth.id",
-        "update": "@request.auth.id != '' && owner = @request.auth.id",
-        "delete": "@request.auth.id != '' && owner = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && owner = @request.auth.id)"
       },
       "fields": [
         {
@@ -613,11 +613,11 @@
       "name": "visitas_comerciais",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && responsavel = @request.auth.id",
-        "view": "@request.auth.id != '' && responsavel = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && responsavel = @request.auth.id",
-        "delete": "@request.auth.id != '' && responsavel = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)"
       },
       "fields": [
         {
@@ -783,9 +783,9 @@
       "apiRules": {
         "list": "@request.auth.id != ''",
         "view": "@request.auth.id != ''",
-        "create": null,
-        "update": null,
-        "delete": null
+        "create": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin'"
       },
       "fields": [
         {
@@ -833,11 +833,11 @@
       "name": "contratos",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && responsavel = @request.auth.id",
-        "view": "@request.auth.id != '' && responsavel = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && responsavel = @request.auth.id",
-        "delete": "@request.auth.id != '' && responsavel = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)"
       },
       "fields": [
         {
@@ -939,11 +939,11 @@
       "name": "movimentos_receita",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && responsavel = @request.auth.id",
-        "view": "@request.auth.id != '' && responsavel = @request.auth.id",
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
         "create": "@request.auth.id != ''",
-        "update": "@request.auth.id != '' && responsavel = @request.auth.id",
-        "delete": "@request.auth.id != '' && responsavel = @request.auth.id"
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin' || (@request.auth.id != '' && responsavel = @request.auth.id)"
       },
       "fields": [
         {
