@@ -56,10 +56,29 @@ export interface EtapaFunil {
   updated: string
 }
 
+// Plano de serviço oficial (coleção "planos" no Skip Cloud)
+export interface Plano {
+  id: string
+  nome: string
+  descricao?: string
+  valor_mensal_referencia?: number
+  escopo?: string
+  created?: string
+  updated?: string
+}
+
 export interface Deal {
   id: string
   title: string
   value: number
+  // plano de serviço escolhido pelo cliente (coleção planos)
+  plano?: string
+  // valores do contrato: valor_total = valor_implantacao + valor_mensal × prazo
+  valor_mensal?: number
+  valor_implantacao?: number
+  prazo_contrato_meses?: number
+  // calculado no servidor pelo hook deals_valor_total.pb.js
+  valor_total?: number
   stage: string
   // etapa oficial do funil de serviços (coleção etapas_funil)
   etapa?: string
@@ -89,6 +108,7 @@ export interface Deal {
     etapa_anterior?: EtapaFunil
     contact?: Contact
     owner?: User
+    plano?: Plano
   }
 }
 

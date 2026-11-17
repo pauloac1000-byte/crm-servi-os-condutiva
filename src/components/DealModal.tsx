@@ -18,7 +18,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createDeal, updateDeal } from '@/services/deals'
-import { Deal, EtapaFunil, DealStatus, Contact } from '@/types/crm'
+import { getPlanos } from '@/services/planos'
+import { Deal, EtapaFunil, DealStatus, Contact, Plano } from '@/types/crm'
 import { toast } from 'sonner'
 import { extractFieldErrors, getErrorMessage } from '@/lib/pocketbase/errors'
 import { useAuth } from '@/hooks/use-auth'
@@ -54,10 +55,42 @@ export function DealModal({
   const [priority, setPriority] = useState<'baixa' | 'média' | 'alta'>('média')
   const [expectedCloseDate, setExpectedCloseDate] = useState('')
   const [notes, setNotes] = useState('')
+  const [planoId, setPlanoId] = useState('')
+  const [valorMensal, setValorMensal] = useState('')
+  const [valorImplantacao, setValorImplantacao] = useState('')
+  const [prazoMeses, setPrazoMeses] = useState('')
+  const [planos, setPlanos] = useState<Plano[]>([])
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [justificativa, setJustificativa] = useState('')
   const { isAdmin } = useAuth()
+
+  // Planos oficiais da empresa (coleção "planos" no Skip Cloud)
+  useEffect(() => {
+    if (!open) return
+    getPlanos()
+      .then(setPlanos)
+      .catch(() => setPlanos([]))
+  }, [open])
+
+  // Sugere o valor mensal de referência do plano, sem sobrescrever o que o
+  // usuário já digitou (o plano é referência; o valor real é editável).
+  const handlePlanoChange = (novoPlanoId: string) => {
+    setPlanoId(novoPlanoId)
+    if (!novoPlanoId) return
+    const plano = planos.find((p) => p.id === novoPlanoId)
+    if (plano?.valor_mensal_referencia && !valorMensal) {
+      setValorMensal(String(plano.valor_mensal_referencia))
+    }
+  }
+
+  // Valor total do contrato: implantação + mensal × prazo (espelha o hook do servidor)
+  const valorTotalCalc =
+    (valorImplantacao ? Number(valorImplantacao) : 0) +
+    (valorMensal ? Number(valorMensal) : 0) * (prazoMeses ? Number(prazoMeses) : 0)
+  const temContrato =
+    (valorImplantacao && Number(valorImplantacao) > 0) ||
+    (valorMensal && Number(valorMensal) > 0 && prazoMeses && Number(prazoMeses) > 0)
 
   // Etapa de origem do negócio em edição e o estado do bloqueio do critério
   const etapaOrigem = dealToEdit ? stages.find((s) => s.id === dealToEdit.etapa) : undefined
@@ -81,6 +114,22 @@ export function DealModal({
         dealToEdit.expected_close_date ? dealToEdit.expected_close_date.split(' ')[0] : '',
       )
       setNotes(dealToEdit.notes || '')
+      setPlanoId(dealToEdit.plano || '')
+      setValorMensal(
+        dealToEdit.valor_mensal !== undefined && dealToEdit.valor_mensal !== null
+          ? String(dealToEdit.valor_mensal)
+          : '',
+      )
+      setValorImplantacao(
+        dealToEdit.valor_implantacao !== undefined && dealToEdit.valor_implantacao !== null
+          ? String(dealToEdit.valor_implantacao)
+          : '',
+      )
+      setPrazoMeses(
+        dealToEdit.prazo_contrato_meses !== undefined && dealToEdit.prazo_contrato_meses !== null
+          ? String(dealToEdit.prazo_contrato_meses)
+          : '',
+      )
     } else {
       setTitle('')
       setValue('')
@@ -90,6 +139,10 @@ export function DealModal({
       setPriority('média')
       setExpectedCloseDate('')
       setNotes('')
+      setPlanoId('')
+      setValorMensal('')
+      setValorImplantacao('')
+      setPrazoMeses('')
     }
     setErrors({})
   }, [dealToEdit, open, stages, contacts, defaultContactId, defaultStageId])
@@ -108,6 +161,10 @@ export function DealModal({
       const payload: Partial<Deal> = {
         title: title.trim(),
         value: value ? Number(value) : 0,
+        plano: planoId || undefined,
+        valor_mensal: valorMensal ? Number(valorMensal) : undefined,
+        valor_implantacao: valorImplantacao ? Number(valorImplantacao) : undefined,
+        prazo_contrato_meses: prazoMeses ? Number(prazoMeses) : undefined,
         stage: stageId,
         etapa: stageId,
         status,
@@ -202,6 +259,116 @@ export function DealModal({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Plano de serviço e valores do contrato — valor_total calculado no servidor */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="plano" className="text-slate-700 font-semibold text-xs">
+                  Plano de Serviço
+                </Label>
+                <Select
+                  value={planoId}
+                  onValueChange={(val) => handlePlanoChange(val === 'none' ? '' : val)}
+                >
+                  <SelectTrigger id="plano">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem plano</SelectItem>
+                    {planos.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {(() => {
+                  const planoSel = planos.find((p) => p.id === planoId)
+                  if (!planoSel) return null
+                  return (
+                    <p className="text-[11px] text-slate-500">
+                      {planoSel.valor_mensal_referencia
+                        ? `Referência mensal: ${new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(planoSel.valor_mensal_referencia)}. `
+                        : ''}
+                      {planoSel.escopo || planoSel.descricao}
+                    </p>
+                  )
+                })()}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="valor_implantacao" className="text-slate-700 font-semibold text-xs">
+                  Valor de Implantação (R$)
+                </Label>
+                <Input
+                  id="valor_implantacao"
+                  type="number"
+                  placeholder="0.00"
+                  value={valorImplantacao}
+                  onChange={(e) => setValorImplantacao(e.target.value)}
+                />
+                {errors.valor_implantacao && (
+                  <p className="text-xs text-rose-500">{errors.valor_implantacao}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="valor_mensal" className="text-slate-700 font-semibold text-xs">
+                  Valor Mensal (R$)
+                </Label>
+                <Input
+                  id="valor_mensal"
+                  type="number"
+                  placeholder="0.00"
+                  value={valorMensal}
+                  onChange={(e) => setValorMensal(e.target.value)}
+                />
+                {errors.valor_mensal && (
+                  <p className="text-xs text-rose-500">{errors.valor_mensal}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="prazo_contrato_meses"
+                  className="text-slate-700 font-semibold text-xs"
+                >
+                  Prazo do Contrato (meses)
+                </Label>
+                <Input
+                  id="prazo_contrato_meses"
+                  type="number"
+                  min={0}
+                  step={1}
+                  placeholder="12"
+                  value={prazoMeses}
+                  onChange={(e) => setPrazoMeses(e.target.value)}
+                />
+                {errors.prazo_contrato_meses && (
+                  <p className="text-xs text-rose-500">{errors.prazo_contrato_meses}</p>
+                )}
+              </div>
+            </div>
+
+            {temContrato && (
+              <p className="text-xs font-bold text-teal-700 text-right">
+                Valor total do contrato:{' '}
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                }).format(valorTotalCalc)}
+                <span className="block font-normal text-[10px] text-slate-500">
+                  implantação + valor mensal × prazo
+                </span>
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -18,6 +18,7 @@ import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
+import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 export default function Deals() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -201,7 +202,7 @@ export default function Deals() {
                       </Badge>
                     </td>
                     <td className="p-4 font-extrabold text-teal-700">
-                      {formatCurrency(deal.value)}
+                      {formatCurrency(valorOportunidade(deal))}
                     </td>
                     <td className="p-4 text-xs text-slate-400">
                       {deal.expected_close_date

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { DealModal } from '@/components/DealModal'
 import { ActivityModal } from '@/components/ActivityModal'
+import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 interface ContactDetailDrawerProps {
   contact: Contact | null
@@ -160,7 +161,9 @@ export function ContactDetailDrawer({
                   >
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{d.title}</p>
-                      <p className="text-xs text-teal-700 font-bold">{formatCurrency(d.value)}</p>
+                      <p className="text-xs text-teal-700 font-bold">
+                        {formatCurrency(valorOportunidade(d))}
+                      </p>
                     </div>
                     {d.expand?.etapa && (
                       <span

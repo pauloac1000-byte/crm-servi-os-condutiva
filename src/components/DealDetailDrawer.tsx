@@ -23,6 +23,7 @@ import { IndicadorEtapa } from '@/components/IndicadorEtapa'
 import { CriterioSaidaBloco } from '@/components/CriterioSaidaBloco'
 import { HistoricoBloco } from '@/components/HistoricoBloco'
 import { toast } from 'sonner'
+import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 interface DealDetailDrawerProps {
   deal: Deal | null
@@ -96,7 +97,9 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
             {deal.title}
           </SheetTitle>
           <div className="pt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-teal-700">{formatCurrency(deal.value)}</span>
+            <span className="text-2xl font-black text-teal-700">
+              {formatCurrency(valorOportunidade(deal))}
+            </span>
             <Badge
               variant="outline"
               className={
@@ -154,6 +157,58 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
               <p className="text-xs text-slate-400 italic">Nenhum contato vinculado.</p>
             )}
           </div>
+
+          {/* Plano de serviço escolhido e valores do contrato (valor_total calculado no servidor) */}
+          {(deal.expand?.plano || deal.valor_total) && (
+            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-2">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Plano de Serviço
+              </h4>
+              {deal.expand?.plano && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Badge className="bg-teal-700 text-white hover:bg-teal-800">
+                    {deal.expand.plano.nome}
+                  </Badge>
+                  {typeof deal.expand.plano.valor_mensal_referencia === 'number' && (
+                    <span className="text-xs text-slate-500">
+                      referência: {formatCurrency(deal.expand.plano.valor_mensal_referencia)}/mês
+                    </span>
+                  )}
+                </div>
+              )}
+              {(deal.valor_mensal !== undefined ||
+                deal.valor_implantacao !== undefined ||
+                deal.prazo_contrato_meses !== undefined) && (
+                <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase">
+                      Implantação
+                    </p>
+                    <p className="text-xs font-bold text-slate-800">
+                      {formatCurrency(deal.valor_implantacao || 0)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase">Mensal</p>
+                    <p className="text-xs font-bold text-slate-800">
+                      {formatCurrency(deal.valor_mensal || 0)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase">Prazo</p>
+                    <p className="text-xs font-bold text-slate-800">
+                      {deal.prazo_contrato_meses || 0} meses
+                    </p>
+                  </div>
+                </div>
+              )}
+              {!!deal.valor_total && (
+                <p className="text-xs font-bold text-teal-700 text-right pt-1">
+                  Valor total do contrato: {formatCurrency(deal.valor_total)}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Critério de saída desta etapa — caixas por item, persistidas no Skip Cloud */}
           <CriterioSaidaBloco deal={deal} etapa={stage} onUpdated={onUpdated} />

@@ -21,6 +21,7 @@ import { ContactModal } from '@/components/ContactModal'
 import { Link } from 'react-router-dom'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
+import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -65,10 +66,10 @@ export default function Index() {
   // etapas "Fechado/Ganho" e "Fechado/Perdido"
   const totalWonRevenue = deals
     .filter((d) => d.status === 'ganho')
-    .reduce((sum, d) => sum + (d.value || 0), 0)
+    .reduce((sum, d) => sum + valorOportunidade(d), 0)
 
   const openDeals = deals.filter((d) => d.status !== 'ganho' && d.status !== 'perdido')
-  const totalPipelineValue = openDeals.reduce((sum, d) => sum + (d.value || 0), 0)
+  const totalPipelineValue = openDeals.reduce((sum, d) => sum + valorOportunidade(d), 0)
 
   const totalClosedCount = deals.filter(
     (d) => d.status === 'ganho' || d.status === 'perdido',
@@ -201,10 +202,12 @@ export default function Index() {
           <CardContent className="space-y-4 pt-4">
             {stages.map((stage) => {
               const stageDeals = deals.filter((d) => d.etapa === stage.id)
-              const stageValue = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
+              const stageValue = stageDeals.reduce((sum, d) => sum + valorOportunidade(d), 0)
               const maxVal = Math.max(
                 ...stages.map((st) =>
-                  deals.filter((d) => d.etapa === st.id).reduce((s, x) => s + (x.value || 0), 0),
+                  deals
+                    .filter((d) => d.etapa === st.id)
+                    .reduce((s, x) => s + valorOportunidade(x), 0),
                 ),
                 1,
               )
@@ -325,7 +328,9 @@ export default function Index() {
                         </span>
                       )}
                     </td>
-                    <td className="p-3 font-bold text-slate-900">{formatCurrency(deal.value)}</td>
+                    <td className="p-3 font-bold text-slate-900">
+                      {formatCurrency(valorOportunidade(deal))}
+                    </td>
                     <td className="p-3 text-xs text-slate-400">
                       {deal.expected_close_date
                         ? new Date(deal.expected_close_date).toLocaleDateString('pt-BR')

@@ -1,7 +1,7 @@
 import pb from '@/lib/pocketbase/client'
 import { Deal } from '@/types/crm'
 
-const EXPAND = 'stage,contact,owner,etapa,etapa_anterior'
+const EXPAND = 'stage,contact,owner,etapa,etapa_anterior,plano'
 
 export const getDeals = async (): Promise<Deal[]> => {
   return pb.collection('deals').getFullList<Deal>({

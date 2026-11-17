@@ -17,6 +17,7 @@ import { ForcarAvancoDialog } from '@/components/ForcarAvancoDialog'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { IndicadorEtapa } from '@/components/IndicadorEtapa'
 import { diasNaEtapa } from '@/lib/dias-na-etapa'
+import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 export default function Pipeline() {
   const [stages, setStages] = useState<EtapaFunil[]>([])
@@ -166,7 +167,7 @@ export default function Pipeline() {
               if (db === null) return -1
               return db - da
             })
-          const stageTotal = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0)
+          const stageTotal = stageDeals.reduce((sum, d) => sum + valorOportunidade(d), 0)
 
           return (
             <div
@@ -255,7 +256,7 @@ export default function Pipeline() {
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                       <span className="font-extrabold text-teal-700">
-                        {formatCurrency(deal.value)}
+                        {formatCurrency(valorOportunidade(deal))}
                       </span>
                       {deal.expected_close_date && (
                         <span className="text-[10px] text-slate-400 flex items-center gap-1">
