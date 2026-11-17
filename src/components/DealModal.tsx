@@ -165,7 +165,6 @@ export function DealModal({
         valor_mensal: valorMensal ? Number(valorMensal) : undefined,
         valor_implantacao: valorImplantacao ? Number(valorImplantacao) : undefined,
         prazo_contrato_meses: prazoMeses ? Number(prazoMeses) : undefined,
-        stage: stageId,
         etapa: stageId,
         status,
         contact: contactId,
