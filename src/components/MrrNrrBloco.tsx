@@ -8,9 +8,8 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
+  LabelList,
   Cell,
 } from 'recharts'
 import {
@@ -20,6 +19,18 @@ import {
 } from '@/services/mrr-nrr'
 import { Repeat } from 'lucide-react'
 import type { KpiSituacao } from '@/services/kpis'
+import {
+  GradeGrafico,
+  eixoX,
+  eixoY,
+  tooltipPadrao,
+  rotuloFimDeLinha,
+  COR_LIME_ESCURO,
+  COR_LIME_CLARO,
+  COR_ALERTA,
+  COR_RISCO,
+  COR_NEUTRO,
+} from '@/lib/graficos'
 
 // Bloco "Receita recorrente" do Dashboard: linha do MRR dos últimos 12 meses,
 // NRR do período em destaque e composição do período em barras na sequência
@@ -80,15 +91,15 @@ export function MrrNrrBloco({ entrada }: Props) {
 
   const leitura = leituraNrr(dados?.nrr ?? null, dados?.situacaoNrr ?? null)
 
-  // composição na sequência exata pedida
+  // composição na sequência exata pedida (cores: tokens da identidade)
   const composicao = dados
     ? [
-        { nome: 'Receita inicial', valor: dados.receitaInicial, cor: '#64748b' },
-        { nome: 'Novos', valor: dados.movimentosPorTipo.novos, cor: '#0f766e' },
-        { nome: 'Expansão', valor: dados.movimentosPorTipo.expansao, cor: '#10b981' },
-        { nome: 'Contração', valor: dados.movimentosPorTipo.contracao, cor: '#f59e0b' },
-        { nome: 'Churn', valor: dados.movimentosPorTipo.churn, cor: '#ef4444' },
-        { nome: 'Receita final', valor: dados.receitaFinal, cor: '#6366f1' },
+        { nome: 'Receita inicial', valor: dados.receitaInicial, cor: COR_NEUTRO },
+        { nome: 'Novos', valor: dados.movimentosPorTipo.novos, cor: COR_LIME_CLARO },
+        { nome: 'Expansão', valor: dados.movimentosPorTipo.expansao, cor: COR_LIME_ESCURO },
+        { nome: 'Contração', valor: dados.movimentosPorTipo.contracao, cor: COR_ALERTA },
+        { nome: 'Churn', valor: dados.movimentosPorTipo.churn, cor: COR_RISCO },
+        { nome: 'Receita final', valor: dados.receitaFinal, cor: '#3a3e42' },
       ]
     : []
 
@@ -154,24 +165,15 @@ export function MrrNrrBloco({ entrada }: Props) {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
                     data={dados?.mrrMensal ?? []}
-                    margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+                    margin={{ top: 20, right: 8, bottom: 0, left: 8 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis
-                      dataKey="comp"
-                      tickFormatter={rotuloMes}
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      tickLine={false}
-                      axisLine={{ stroke: '#e2e8f0' }}
-                    />
+                    <GradeGrafico />
+                    <XAxis dataKey="comp" {...eixoX(rotuloMes)} />
                     <YAxis
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      tickFormatter={(v) => formatarMoedaMrr(Number(v))}
-                      tickLine={false}
-                      axisLine={false}
-                      width={72}
+                      {...eixoY({ width: 72, formatter: (v) => formatarMoedaMrr(Number(v)) })}
                     />
                     <Tooltip
+                      {...tooltipPadrao()}
                       formatter={(valor) => formatarMoedaMrr(Number(valor))}
                       labelFormatter={(l) => rotuloMes(String(l))}
                     />
@@ -179,10 +181,16 @@ export function MrrNrrBloco({ entrada }: Props) {
                       type="monotone"
                       dataKey="mrr"
                       name="MRR"
-                      stroke="#0f766e"
+                      stroke={COR_LIME_CLARO}
                       strokeWidth={2}
-                      dot={{ r: 3 }}
+                      dot={{ r: 3, fill: COR_LIME_CLARO, strokeWidth: 0 }}
+                      activeDot={{ r: 4 }}
                       connectNulls
+                      label={rotuloFimDeLinha(
+                        (dados?.mrrMensal ?? []).length - 1,
+                        (v) => (v !== null ? formatarMoedaMrr(v) : null),
+                        '#4c7313',
+                      )}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -207,33 +215,40 @@ export function MrrNrrBloco({ entrada }: Props) {
                           nome: c.nome,
                           valor: c.valor ?? 0,
                         }))}
-                        margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+                        margin={{ top: 20, right: 8, bottom: 0, left: 8 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                        <XAxis
-                          dataKey="nome"
-                          tick={{ fontSize: 11, fill: '#94a3b8' }}
-                          tickLine={false}
-                          axisLine={{ stroke: '#e2e8f0' }}
-                          interval={0}
-                        />
+                        <GradeGrafico />
+                        <XAxis dataKey="nome" {...eixoX()} interval={0} />
                         <YAxis
-                          tick={{ fontSize: 11, fill: '#94a3b8' }}
-                          tickFormatter={(v) => formatarMoedaMrr(Number(v))}
-                          tickLine={false}
-                          axisLine={false}
-                          width={72}
+                          {...eixoY({
+                            width: 72,
+                            formatter: (v) => formatarMoedaMrr(Number(v)),
+                            barras: true,
+                          })}
                         />
-                        <Tooltip formatter={(valor) => formatarMoedaMrr(Number(valor))} />
-                        <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]}>
+                        <Tooltip
+                          {...tooltipPadrao()}
+                          formatter={(valor) => formatarMoedaMrr(Number(valor))}
+                        />
+                        {/* rótulo direto do valor no topo de cada barra (sem legenda) */}
+                        <Bar dataKey="valor" name="Valor" radius={[3, 3, 0, 0]}>
                           {composicao.map((c) => (
                             <Cell key={c.nome} fill={c.cor} />
                           ))}
+                          <LabelList
+                            dataKey="valor"
+                            position="top"
+                            fontSize={10}
+                            fontFamily="'IBM Plex Mono', ui-monospace, monospace"
+                            fill="#6b7280"
+                            formatter={(v: number) => (v > 0 ? formatarMoedaMrr(v) : '')}
+                          />
                         </Bar>
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* legenda manual na sequência pedida */}
+                  {/* amostras de cor na ordem pedida — apoio à leitura rápida,
+                      redundante com o rótulo direto de cada barra */}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
                     {composicao.map((c) => (
                       <span

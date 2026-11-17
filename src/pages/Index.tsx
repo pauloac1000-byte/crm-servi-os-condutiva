@@ -11,7 +11,7 @@ import {
   DollarSign,
   Briefcase,
   TrendingUp,
-  PieChart as PieChartIcon,
+  BarChart3 as BarChartIcon,
   Plus,
   CheckCircle2,
   ArrowRight,
@@ -239,7 +239,7 @@ export default function Index() {
               <p className="text-[11px] text-slate-500 mt-1 font-medium">Oportunidades ativas</p>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <PieChartIcon className="h-6 w-6" />
+              <BarChartIcon className="h-6 w-6" />
             </div>
           </CardContent>
         </Card>

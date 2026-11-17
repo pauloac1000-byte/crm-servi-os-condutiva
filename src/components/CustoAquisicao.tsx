@@ -8,11 +8,19 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
+  LabelList,
 } from 'recharts'
 import { formatarMoeda, formatarNumero, formatarIndicadorMoeda } from '@/services/custo-aquisicao'
+import {
+  GradeGrafico,
+  eixoX,
+  eixoY,
+  tooltipPadrao,
+  COR_LIME_ESCURO,
+  COR_LIME_CLARO,
+  FONTE_NUMERO,
+} from '@/lib/graficos'
 
 // Bloco do Dashboard: custo de aquisição da unidade de serviços.
 // Quatro números do período + gráfico de 12 meses (gasto mensal em visitas em
@@ -126,55 +134,62 @@ export function CustoAquisicao({ entrada }: Props) {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={dados?.mensal ?? []}
-                margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+                margin={{ top: 20, right: 8, bottom: 0, left: 8 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="comp"
-                  tickFormatter={rotuloMes}
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
-                />
+                <GradeGrafico />
+                <XAxis dataKey="comp" {...eixoX(rotuloMes)} />
                 <YAxis
                   yAxisId="gasto"
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  tickFormatter={(v) => formatarMoeda(Number(v))}
-                  tickLine={false}
-                  axisLine={false}
-                  width={64}
+                  {...eixoY({
+                    yAxisId: 'gasto',
+                    width: 64,
+                    formatter: (v) => formatarMoeda(Number(v)),
+                    barras: true,
+                  })}
                 />
                 <YAxis
                   yAxisId="contratos"
-                  orientation="right"
-                  allowDecimals={false}
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={32}
+                  {...eixoY({ yAxisId: 'contratos', orientation: 'right', width: 32 })}
                 />
                 <Tooltip
+                  {...tooltipPadrao()}
                   formatter={(valor, nome) =>
                     nome === 'Gasto em visitas' ? formatarMoeda(Number(valor)) : String(valor)
                   }
                   labelFormatter={(l) => rotuloMes(String(l))}
                 />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar
                   yAxisId="gasto"
                   dataKey="gasto"
                   name="Gasto em visitas"
-                  fill="#0f766e"
-                  radius={[4, 4, 0, 0]}
-                />
+                  fill={COR_LIME_ESCURO}
+                  radius={[3, 3, 0, 0]}
+                >
+                  <LabelList
+                    dataKey="gasto"
+                    position="top"
+                    fontSize={10}
+                    fontFamily={FONTE_NUMERO}
+                    fill="#6b7280"
+                    formatter={(v: number) => (v > 0 ? formatarMoeda(v) : '')}
+                  />
+                </Bar>
                 <Line
                   yAxisId="contratos"
                   type="monotone"
                   dataKey="contratos"
                   name="Contratos assinados"
-                  stroke="#6366f1"
+                  stroke={COR_LIME_CLARO}
                   strokeWidth={2}
-                  dot={{ r: 3 }}
+                  dot={{ r: 3, fill: COR_LIME_CLARO, strokeWidth: 0 }}
+                  activeDot={{ r: 4 }}
+                  label={{
+                    position: 'top',
+                    fontSize: 10,
+                    fontFamily: FONTE_NUMERO,
+                    fill: '#6b7280',
+                    formatter: (v: number) => (v > 0 ? String(v) : ''),
+                  }}
                 />
               </ComposedChart>
             </ResponsiveContainer>

@@ -8,9 +8,8 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
+  LabelList,
 } from 'recharts'
 import {
   formatarMoedaMetas,
@@ -19,6 +18,17 @@ import {
   formatarPercentualMetas,
 } from '@/services/metas-acompanhamento'
 import { Target } from 'lucide-react'
+import {
+  GradeGrafico,
+  eixoX,
+  eixoY,
+  tooltipPadrao,
+  rotuloFimDeLinha,
+  COR_LIME_ESCURO,
+  COR_LIME_CLARO,
+  COR_ALERTA,
+  COR_RISCO,
+} from '@/lib/graficos'
 
 // Bloco "Metas" do Dashboard: realizado de RCS de 2026 contra a meta
 // (coleção "metas" no Skip Cloud, sem dados de exemplo).
@@ -107,7 +117,8 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
         {/* --- gráfico combinado --- */}
         <div>
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            RCS {ano}: realizado mensal (barras) e acumulado vs. meta (linhas)
+            RCS {ano}: realizado mensal (barras lime) · meta do mês (ponto âmbar) · acumulado
+            realizado (linha lime) vs. meta acumulada (linha tracejada vermelha)
           </p>
           {loading ? (
             <div className="h-72 w-full flex items-center justify-center text-sm text-slate-400">
@@ -125,58 +136,61 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={serieGrafico}
-                  margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+                  margin={{ top: 20, right: 72, bottom: 0, left: 8 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="comp"
-                    tickFormatter={rotuloMes}
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#e2e8f0' }}
-                  />
+                  <GradeGrafico />
+                  <XAxis dataKey="comp" {...eixoX(rotuloMes)} />
                   <YAxis
                     yAxisId="mensal"
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
-                    tickFormatter={(v) => formatarMoedaMetas(Number(v))}
-                    tickLine={false}
-                    axisLine={false}
-                    width={72}
+                    {...eixoY({
+                      yAxisId: 'mensal',
+                      width: 72,
+                      formatter: (v) => formatarMoedaMetas(Number(v)),
+                      barras: true,
+                    })}
                   />
                   <YAxis
                     yAxisId="acumulado"
-                    orientation="right"
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
-                    tickFormatter={(v) => formatarMoedaMetas(Number(v))}
-                    tickLine={false}
-                    axisLine={false}
-                    width={72}
+                    {...eixoY({
+                      yAxisId: 'acumulado',
+                      orientation: 'right',
+                      width: 72,
+                      formatter: (v) => formatarMoedaMetas(Number(v)),
+                    })}
                   />
                   <Tooltip
+                    {...tooltipPadrao()}
                     formatter={(valor, nome) => {
                       if (valor === null || valor === undefined) return ['—', String(nome)]
                       return [formatarMoedaMetas(Number(valor)), String(nome)]
                     }}
                     labelFormatter={(l) => rotuloMes(String(l))}
                   />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar
                     yAxisId="mensal"
                     dataKey="realizado"
                     name="Realizado do mês"
-                    fill="#0f766e"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  {/* marcador da meta do mês: linha discreta sobre as barras */}
+                    fill={COR_LIME_ESCURO}
+                    radius={[3, 3, 0, 0]}
+                  >
+                    <LabelList
+                      dataKey="realizado"
+                      position="top"
+                      fontSize={10}
+                      fontFamily="'IBM Plex Mono', ui-monospace, monospace"
+                      fill="#6b7280"
+                      formatter={(v: number) => (v > 0 ? formatarMoedaMetas(v) : '')}
+                    />
+                  </Bar>
+                  {/* marcador da meta do mês: ponto âmbar sobre as barras */}
                   <Line
                     yAxisId="mensal"
                     type="monotone"
                     dataKey="meta"
                     name="Meta do mês"
-                    stroke="#f59e0b"
+                    stroke={COR_ALERTA}
                     strokeWidth={0}
-                    dot={{ r: 3.5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 1 }}
-                    legendType="circle"
+                    dot={{ r: 3.5, fill: COR_ALERTA, stroke: '#fff', strokeWidth: 1 }}
                     connectNulls
                   />
                   <Line
@@ -184,20 +198,30 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
                     type="monotone"
                     dataKey="acumuladoRealizado"
                     name="Acumulado realizado"
-                    stroke="#6366f1"
+                    stroke={COR_LIME_CLARO}
                     strokeWidth={2}
-                    dot={{ r: 3 }}
+                    dot={{ r: 3, fill: COR_LIME_CLARO, strokeWidth: 0 }}
                     connectNulls
+                    label={rotuloFimDeLinha(
+                      serieGrafico.length - 1,
+                      (v) => (v !== null ? formatarMoedaMetas(v) : null),
+                      '#4c7313',
+                    )}
                   />
                   <Line
                     yAxisId="acumulado"
                     type="monotone"
                     dataKey="metaAcumulada"
-                    name="Meta acumulada (R$ 1,5 mi)"
-                    stroke="#ef4444"
+                    name="Meta acumulada"
+                    stroke={COR_RISCO}
                     strokeWidth={2}
                     strokeDasharray="5 4"
                     dot={false}
+                    label={rotuloFimDeLinha(
+                      serieGrafico.length - 1,
+                      (v) => (v !== null ? formatarMoedaMetas(v) : null),
+                      COR_RISCO,
+                    )}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
