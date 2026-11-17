@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { createContrato, updateContrato } from '@/services/contratos'
 import { getPlanos } from '@/services/planos'
 import { Contrato, Contact, Deal, User, Plano } from '@/types/crm'
@@ -43,6 +44,7 @@ const VALORES_INICIAIS = {
   negocioId: '',
   planoId: '',
   responsavelId: '',
+  informacoes_plano: '',
   valor_mensal: '',
   valor_implantacao: '',
   status: 'ativo' as 'ativo' | 'encerrado' | 'suspenso',
@@ -84,6 +86,7 @@ export function ContratoModal({
         negocioId: contratoToEdit.negocio || '',
         planoId: contratoToEdit.plano || '',
         responsavelId: contratoToEdit.responsavel || '',
+        informacoes_plano: contratoToEdit.informacoes_plano || '',
         valor_mensal:
           contratoToEdit.valor_mensal !== undefined && contratoToEdit.valor_mensal !== null
             ? String(contratoToEdit.valor_mensal)
@@ -128,6 +131,66 @@ export function ContratoModal({
   const set = (campo: keyof typeof VALORES_INICIAIS, valor: string) =>
     setValores((v) => ({ ...v, [campo]: valor }))
 
+  // Contato vinculado ao negócio selecionado (para exibir empresa + contato)
+  const dealSelecionado = valores.negocioId
+    ? deals.find((d) => d.id === valores.negocioId)
+    : undefined
+  const contatoDoNegocio = dealSelecionado
+    ? contacts.find(
+        (c) => c.id === (dealSelecionado.contact || dealSelecionado.expand?.contact?.id),
+      )
+    : undefined
+
+  // Cliente exibido quando há negócio de origem: nome da empresa (o nome do
+  // negócio) com o nome do contato junto — somente leitura.
+  const rotuloClienteDoNegocio = (() => {
+    if (!dealSelecionado || !contatoDoNegocio) return ''
+    const empresa =
+      contatoDoNegocio.company || dealSelecionado.expand?.contact?.company || dealSelecionado.title
+    return `${empresa} — ${contatoDoNegocio.name}`
+  })()
+
+  // Escolha do negócio preenche cliente (contato do negócio), plano e valores
+  // automaticamente — editáveis depois pelo usuário.
+  const handleNegocioChange = (novoNegocioId: string) => {
+    set('negocioId', novoNegocioId)
+    if (!novoNegocioId) {
+      // Removeu o negócio: libera o cliente para seleção manual, mantendo
+      // plano/valores já digitados.
+      setValores((v) => {
+        const dealAnterior = deals.find((d) => d.id === v.negocioId)
+        const contatoAnterior = dealAnterior
+          ? contacts.find(
+              (c) => c.id === (dealAnterior.contact || dealAnterior.expand?.contact?.id),
+            )
+          : undefined
+        const clienteVeioDoNegocio =
+          !contatoAnterior || v.clienteId === (dealAnterior?.contact || contatoAnterior.id)
+        return clienteVeioDoNegocio
+          ? { ...v, negocioId: '', clienteId: '' }
+          : { ...v, negocioId: '' }
+      })
+      return
+    }
+    const deal = deals.find((d) => d.id === novoNegocioId)
+    if (!deal) return
+    const contato = contacts.find((c) => c.id === (deal.contact || deal.expand?.contact?.id))
+    setValores((v) => ({
+      ...v,
+      negocioId: deal.id,
+      clienteId: deal.contact || contato?.id || v.clienteId,
+      planoId: deal.plano || v.planoId,
+      valor_mensal:
+        deal.valor_mensal !== undefined && deal.valor_mensal !== null
+          ? String(deal.valor_mensal)
+          : v.valor_mensal,
+      valor_implantacao:
+        deal.valor_implantacao !== undefined && deal.valor_implantacao !== null
+          ? String(deal.valor_implantacao)
+          : v.valor_implantacao,
+    }))
+  }
+
   // Sugere o valor mensal de referência do plano, sem sobrescrever o que o
   // usuário já digitou (o plano é referência; o valor real é editável).
   const handlePlanoChange = (novoPlanoId: string) => {
@@ -154,6 +217,7 @@ export function ContratoModal({
         negocio: valores.negocioId || undefined,
         plano: valores.planoId || undefined,
         responsavel: valores.responsavelId || undefined,
+        informacoes_plano: valores.informacoes_plano || undefined,
         valor_mensal: toNum(valores.valor_mensal),
         valor_implantacao: toNum(valores.valor_implantacao),
         data_inicio: valores.data_inicio ? `${valores.data_inicio} 00:00:00.000Z` : undefined,
@@ -214,7 +278,7 @@ export function ContratoModal({
               </Label>
               <Select
                 value={valores.negocioId}
-                onValueChange={(val) => set('negocioId', val === 'none' ? '' : val)}
+                onValueChange={(val) => handleNegocioChange(val === 'none' ? '' : val)}
               >
                 <SelectTrigger id="c_negocio">
                   <SelectValue placeholder="Nenhum" />
@@ -231,21 +295,40 @@ export function ContratoModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="c_cliente" className="text-slate-700 font-semibold text-xs">
-                Cliente *
-              </Label>
-              <Select value={valores.clienteId} onValueChange={(val) => set('clienteId', val)}>
-                <SelectTrigger id="c_cliente">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contacts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {dealSelecionado && contatoDoNegocio ? (
+                // Com negócio de origem: cliente vem do negócio (empresa +
+                // contato), somente leitura.
+                <>
+                  <Label htmlFor="c_cliente" className="text-slate-700 font-semibold text-xs">
+                    Cliente *
+                  </Label>
+                  <div
+                    id="c_cliente"
+                    className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-3 flex items-center text-sm text-slate-700 truncate"
+                    title={rotuloClienteDoNegocio}
+                  >
+                    {rotuloClienteDoNegocio}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Label htmlFor="c_cliente" className="text-slate-700 font-semibold text-xs">
+                    Cliente *
+                  </Label>
+                  <Select value={valores.clienteId} onValueChange={(val) => set('clienteId', val)}>
+                    <SelectTrigger id="c_cliente">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contacts.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </div>
           </div>
 
@@ -289,6 +372,19 @@ export function ContratoModal({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="c_informacoes_plano" className="text-slate-700 font-semibold text-xs">
+              Informações do plano contratado (opcional)
+            </Label>
+            <Textarea
+              id="c_informacoes_plano"
+              placeholder="Observações sobre o que foi contratado: escopo, condições, particularidades..."
+              rows={3}
+              value={valores.informacoes_plano}
+              onChange={(e) => set('informacoes_plano', e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

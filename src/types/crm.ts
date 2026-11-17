@@ -193,6 +193,8 @@ export interface Contrato {
   negocio?: string
   plano?: string
   responsavel?: string
+  // observações de texto livre sobre o que foi contratado (escopo, condições)
+  informacoes_plano?: string
   valor_mensal?: number
   valor_implantacao?: number
   data_inicio?: string

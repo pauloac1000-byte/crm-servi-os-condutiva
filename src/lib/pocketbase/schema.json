@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T08:20:50.859Z",
+  "generatedAt": "2026-11-17T08:29:05.658Z",
   "collections": [
     {
       "name": "users",
@@ -919,6 +919,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "informacoes_plano",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
