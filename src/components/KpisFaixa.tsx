@@ -13,6 +13,11 @@ import type { KpiResultado, KpiSituacao } from '@/services/kpis'
 // Faixa com os cinco KPIs da unidade de serviços no topo do Dashboard.
 // Toda a conta vem do motor src/services/kpis.ts (via useKpis); aqui só há
 // formatação e o seletor de período que alimenta a própria faixa.
+//
+// O período também pode ser CONTROLADO por quem renderiza a faixa (props
+// opcionais periodo/onChangePeriodo — estado elevado). Sem as props, o
+// comportamento é o de sempre: seletor próprio da faixa. O funil do Dashboard
+// (FunilVendas) usa o estado elevado para compartilhar o período da faixa.
 
 const MESES = [
   'Janeiro',
@@ -36,6 +41,12 @@ const SEMAFORO: Record<Exclude<KpiSituacao, null>, { barra: string; texto: strin
   verde: { barra: 'bg-emerald-500', texto: 'text-emerald-600' },
   ambar: { barra: 'bg-amber-500', texto: 'text-amber-600' },
   vermelho: { barra: 'bg-rose-500', texto: 'text-rose-600' },
+}
+
+// Período compartilhado da faixa: 0 = ano inteiro; 1-12 = mês único, mais o ano
+export interface PeriodoFaixa {
+  mes: number
+  ano: number
 }
 
 const fmtNumero = (v: number, casas: number) =>
@@ -64,12 +75,29 @@ const fmtDiferenca = (k: KpiResultado) => {
   return `${sinal}${fmtNumero(abs, 1)} pp`
 }
 
-export function KpisFaixa() {
+export function KpisFaixa({
+  periodo,
+  onChangePeriodo,
+}: {
+  periodo?: PeriodoFaixa
+  onChangePeriodo?: (p: PeriodoFaixa) => void
+}) {
   const anoAtual = new Date().getFullYear()
-  const [ano, setAno] = useState(anoAtual)
+  const [anoInterno, setAnoInterno] = useState(anoAtual)
   // 0 = ano inteiro; 1-12 = mês único
-  const [mes, setMes] = useState(0)
+  const [mesInterno, setMesInterno] = useState(0)
   const anos = [anoAtual - 2, anoAtual - 1, anoAtual, anoAtual + 1]
+
+  const mes = periodo ? periodo.mes : mesInterno
+  const ano = periodo ? periodo.ano : anoInterno
+  const setMes = (v: number) => {
+    setMesInterno(v)
+    onChangePeriodo?.({ mes: v, ano })
+  }
+  const setAno = (v: number) => {
+    setAnoInterno(v)
+    onChangePeriodo?.({ mes, ano: v })
+  }
 
   const { dados, erro } = useKpis(mes ? { ano, mes } : { ano })
 

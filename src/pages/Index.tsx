@@ -22,7 +22,8 @@ import { Link } from 'react-router-dom'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
-import { KpisFaixa } from '@/components/KpisFaixa'
+import { KpisFaixa, type PeriodoFaixa } from '@/components/KpisFaixa'
+import { FunilVendas } from '@/components/FunilVendas'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -31,6 +32,11 @@ export default function Index() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [dealModalOpen, setDealModalOpen] = useState(false)
   const [contactModalOpen, setContactModalOpen] = useState(false)
+  // período compartilhado entre a faixa de KPIs e o funil (seletor da faixa)
+  const [periodo, setPeriodo] = useState<PeriodoFaixa>({
+    mes: 0,
+    ano: new Date().getFullYear(),
+  })
 
   const loadDashboardData = async () => {
     try {
@@ -121,7 +127,7 @@ export default function Index() {
         </div>
       </div>
 
-      <KpisFaixa />
+      <KpisFaixa periodo={periodo} onChangePeriodo={setPeriodo} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <Card className="border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all rounded-2xl">
@@ -193,52 +199,9 @@ export default function Index() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-slate-200/80 bg-white shadow-sm rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
-              <span>Funil de Vendas por Etapa</span>
-              <span className="text-xs font-normal text-slate-400">
-                Total: {deals.length} oportunidades
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-4">
-            {stages.map((stage) => {
-              const stageDeals = deals.filter((d) => d.etapa === stage.id)
-              const stageValue = stageDeals.reduce((sum, d) => sum + valorOportunidade(d), 0)
-              const maxVal = Math.max(
-                ...stages.map((st) =>
-                  deals
-                    .filter((d) => d.etapa === st.id)
-                    .reduce((s, x) => s + valorOportunidade(x), 0),
-                ),
-                1,
-              )
-              const pct = Math.round((stageValue / maxVal) * 100)
-
-              return (
-                <div key={stage.id} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-medium">
-                    <span className="flex items-center gap-2 font-semibold text-slate-800">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: stage.cor }}
-                      />
-                      {stage.nome} ({stageDeals.length})
-                    </span>
-                    <span className="font-bold text-slate-900">{formatCurrency(stageValue)}</span>
-                  </div>
-                  <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${Math.max(pct, 4)}%`, backgroundColor: stage.cor }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+          <FunilVendas periodo={periodo} />
+        </div>
 
         <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
