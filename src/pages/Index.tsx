@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,12 +22,23 @@ import { Link } from 'react-router-dom'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
-import { KpisFaixa, type PeriodoFaixa } from '@/components/KpisFaixa'
+import { KpisFaixa } from '@/components/KpisFaixa'
 import { FunilVendas } from '@/components/FunilVendas'
 import { CustoAquisicao } from '@/components/CustoAquisicao'
 import { MetasBloco } from '@/components/MetasBloco'
 import { MrrNrrBloco } from '@/components/MrrNrrBloco'
 import { PrecisaAcao } from '@/components/PrecisaAcao'
+import { DashboardFiltrosBar } from '@/components/DashboardFiltrosBar'
+import {
+  SelecaoFiltros,
+  carregarSelecao,
+  salvarSelecao,
+  resolverPeriodo,
+  rotuloPeriodo,
+} from '@/lib/dashboard-filtros'
+import { useAuth } from '@/hooks/use-auth'
+import { getUsers } from '@/services/users'
+import { User } from '@/types/crm'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -36,11 +47,33 @@ export default function Index() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [dealModalOpen, setDealModalOpen] = useState(false)
   const [contactModalOpen, setContactModalOpen] = useState(false)
-  // período compartilhado entre a faixa de KPIs e o funil (seletor da faixa)
-  const [periodo, setPeriodo] = useState<PeriodoFaixa>({
-    mes: 0,
-    ano: new Date().getFullYear(),
-  })
+  const { user } = useAuth()
+
+  // FILTRO GLOBAL do Dashboard (período + responsável): estado elevado aqui e
+  // consumido por TODOS os blocos da página. A última seleção persiste em
+  // localStorage (por usuário) e volta aplicada ao recarregar a página.
+  const [selecao, setSelecao] = useState<SelecaoFiltros>(() => carregarSelecao(user?.id ?? ''))
+  const [responsaveis, setResponsaveis] = useState<User[]>([])
+
+  // reabre a seleção salva quando a sessão termina de carregar (o id do
+  // usuário muda a chave do storage)
+  useEffect(() => {
+    if (user) setSelecao(carregarSelecao(user.id))
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const mudarSelecao = (nova: SelecaoFiltros) => {
+    setSelecao(nova)
+    if (user) salvarSelecao(user.id, nova)
+  }
+
+  const periodoAtual = useMemo(() => resolverPeriodo(selecao), [selecao])
+
+  // lista de responsáveis comerciais para o select (usuários do sistema)
+  useEffect(() => {
+    getUsers()
+      .then(setResponsaveis)
+      .catch(() => setResponsaveis([]))
+  }, [])
 
   const loadDashboardData = async () => {
     try {
@@ -105,9 +138,13 @@ export default function Index() {
     <div className="space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Visão Geral de Vendas
-          </h2>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              Visão Geral de Vendas
+            </h2>
+            {/* período escolhido no filtro global, ao lado do título */}
+            <span className="text-sm font-semibold text-teal-700">{rotuloPeriodo(selecao)}</span>
+          </div>
           <p className="text-sm text-slate-500">
             Desempenho da unidade de serviços Condutiva Tecnologia
           </p>
@@ -131,7 +168,18 @@ export default function Index() {
         </div>
       </div>
 
-      <KpisFaixa periodo={periodo} onChangePeriodo={setPeriodo} />
+      {/* filtros globais: período + responsável comercial */}
+      <DashboardFiltrosBar selecao={selecao} responsaveis={responsaveis} onChange={mudarSelecao} />
+
+      <KpisFaixa
+        entrada={{
+          dataDe: periodoAtual.dataDe,
+          dataAte: periodoAtual.dataAte,
+          ano: periodoAtual.ano,
+          mes: periodoAtual.mes,
+          responsavel: selecao.responsavel,
+        }}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <Card className="border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all rounded-2xl">
@@ -204,7 +252,13 @@ export default function Index() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <FunilVendas periodo={periodo} />
+          <FunilVendas
+            entrada={{
+              dataDe: periodoAtual.dataDe,
+              dataAte: periodoAtual.dataAte,
+              responsavel: selecao.responsavel,
+            }}
+          />
         </div>
 
         <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
@@ -251,11 +305,30 @@ export default function Index() {
 
       <PrecisaAcao />
 
-      <CustoAquisicao periodo={periodo} />
+      <CustoAquisicao
+        entrada={{
+          dataDe: periodoAtual.dataDe,
+          dataAte: periodoAtual.dataAte,
+          responsavel: selecao.responsavel,
+        }}
+      />
 
-      <MetasBloco />
+      <MetasBloco
+        entrada={{
+          ano: periodoAtual.ano,
+          dataDe: periodoAtual.dataDe,
+          dataAte: periodoAtual.dataAte,
+          responsavel: selecao.responsavel,
+        }}
+      />
 
-      <MrrNrrBloco periodo={periodo} />
+      <MrrNrrBloco
+        entrada={{
+          dataDe: periodoAtual.dataDe,
+          dataAte: periodoAtual.dataAte,
+          responsavel: selecao.responsavel,
+        }}
+      />
 
       <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2">

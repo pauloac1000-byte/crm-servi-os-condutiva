@@ -55,6 +55,8 @@ const rotuloMes = (comp: string) => {
 
 export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
   const { dados, loading, erro } = useMetasAcompanhamento(entrada)
+  // ano do acompanhamento (vem do filtro global do Dashboard via entrada)
+  const ano = entrada.ano
 
   // linha do realizado no gráfico: null quebra a linha (sem dado = sem ponto)
   const serieGrafico = (dados?.mensal ?? []).map((m) => ({
