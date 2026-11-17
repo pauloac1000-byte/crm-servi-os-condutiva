@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,13 @@ import {
 import { createVisita, updateVisita } from '@/services/visitas'
 import { getConfiguracoes } from '@/services/configuracoes'
 import { VisitaComercial, Contact, Deal, User } from '@/types/crm'
+import {
+  useVisitaEmpresa,
+  chaveLocalidade,
+  rotuloLocalidade,
+  CHAVE_TODAS,
+} from '@/hooks/use-visita-empresa'
+
 import { toast } from 'sonner'
 
 interface VisitasModalProps {
@@ -98,6 +105,10 @@ export function VisitasModal({
 
   useEffect(() => {
     if (visitaToEdit) {
+      // Empresa/localidade são repostas a partir do que está gravado na visita
+      // (ou, em visitas antigas sem empresa gravada, do contato vinculado).
+      const contatoVisita =
+        visitaToEdit.expand?.contato || contacts.find((c) => c.id === visitaToEdit.contato)
       setValores({
         data: visitaToEdit.data ? visitaToEdit.data.split(' ')[0].split('T')[0] : '',
         tipo: visitaToEdit.tipo || 'presencial',
@@ -113,6 +124,10 @@ export function VisitasModal({
         outros_custos: numToStr(visitaToEdit.outros_custos),
         resultado: visitaToEdit.resultado || '',
       })
+      resetEmpresa(
+        (visitaToEdit.empresa || contatoVisita?.company || '').trim(),
+        visitaToEdit.contato || '',
+      )
     } else {
       setValores({
         ...VALORES_INICIAIS,
@@ -120,12 +135,36 @@ export function VisitasModal({
         contatoId: defaultContactId || '',
         negocioId: defaultDealId || '',
       })
+      // Nova visita aberta a partir de um contato: pré-seleciona a empresa
+      // desse contato (o contato já vem preenchido).
+      const contatoPadrao = defaultContactId
+        ? contacts.find((c) => c.id === defaultContactId)
+        : undefined
+      resetEmpresa((contatoPadrao?.company || '').trim(), defaultContactId || '')
     }
-  }, [visitaToEdit, open, defaultContactId, defaultDealId, defaultResponsavelId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitaToEdit, open, defaultContactId, defaultDealId, defaultResponsavelId, contacts])
 
   const set = (campo: keyof typeof VALORES_INICIAIS, valor: string) =>
     setValores((v) => ({ ...v, [campo]: valor }))
 
+  const {
+    empresa,
+    empresasDisponiveis,
+    localidadesDaEmpresa,
+    localidade,
+    contatosParaLista,
+    negociosFiltrados,
+    resetEmpresa,
+    selecionarEmpresa,
+    selecionarLocalidade,
+  } = useVisitaEmpresa({
+    contacts,
+    deals,
+    contatoId: valores.contatoId,
+    negocioId: valores.negocioId,
+    setValores: setValores as unknown as (u: (prev: any) => any) => void,
+  })
   // Ao alterar o km, pré-preenche o combustível (km × custo por km) — mas só
   // enquanto o usuário não tiver corrigido o valor manualmente.
   const setKm = (valor: string) => {
@@ -152,6 +191,7 @@ export function VisitasModal({
 
     try {
       const payload: Partial<VisitaComercial> = {
+        empresa: empresa.trim() || undefined,
         data: valores.data ? `${valores.data} 00:00:00.000Z` : undefined,
         tipo: valores.tipo,
         contato: valores.contatoId || undefined,
@@ -251,6 +291,66 @@ export function VisitasModal({
             </div>
           </div>
 
+          {/* Empresa → localidade → contato */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="v_empresa" className="text-slate-700 font-semibold text-xs">
+                Empresa
+              </Label>
+              <Select value={empresa} onValueChange={(val) => selecionarEmpresa(val)}>
+                <SelectTrigger id="v_empresa">
+                  <SelectValue placeholder="Selecione a empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {empresasDisponiveis.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="v_localidade" className="text-slate-700 font-semibold text-xs">
+                Cidade / Estado
+              </Label>
+              {localidadesDaEmpresa.length > 1 ? (
+                <Select value={localidade} onValueChange={selecionarLocalidade}>
+                  <SelectTrigger id="v_localidade">
+                    <SelectValue placeholder={empresa ? 'Todas' : '—'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={CHAVE_TODAS}>Todas as localidades</SelectItem>
+                    {localidadesDaEmpresa.map((l) => (
+                      <SelectItem
+                        key={chaveLocalidade(l.cidade, l.estado)}
+                        value={chaveLocalidade(l.cidade, l.estado)}
+                      >
+                        {rotuloLocalidade(l.cidade, l.estado)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="v_localidade"
+                  readOnly
+                  value={
+                    localidadesDaEmpresa.length === 1
+                      ? rotuloLocalidade(
+                          localidadesDaEmpresa[0].cidade,
+                          localidadesDaEmpresa[0].estado,
+                        )
+                      : ''
+                  }
+                  placeholder="—"
+                  className="bg-slate-50 text-slate-500"
+                />
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="v_contato" className="text-slate-700 font-semibold text-xs">
@@ -258,16 +358,19 @@ export function VisitasModal({
               </Label>
               <Select value={valores.contatoId} onValueChange={(val) => set('contatoId', val)}>
                 <SelectTrigger id="v_contato">
-                  <SelectValue placeholder="Nenhum" />
+                  <SelectValue placeholder={empresa ? 'Nenhum' : 'Selecione a empresa'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {contacts.map((c) => (
+                  {contatosParaLista.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {!empresa && (
+                <p className="text-[11px] text-slate-400 italic">Selecione a empresa primeiro</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -279,7 +382,7 @@ export function VisitasModal({
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>
                 <SelectContent>
-                  {deals.map((d) => (
+                  {negociosFiltrados.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.title}
                     </SelectItem>

@@ -117,6 +117,8 @@ export interface HistoricoNegocio {
 // no servidor (hook), somando os valores monetários da visita.
 export interface VisitaComercial {
   id: string
+  // nome da empresa visitada (denormalizado do contato, escolhido no modal)
+  empresa?: string
   data?: string
   contato?: string
   negocio?: string

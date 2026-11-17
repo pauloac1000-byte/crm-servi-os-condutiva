@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T23:39:22.683Z",
+  "generatedAt": "2026-11-16T23:59:51.604Z",
   "collections": [
     {
       "name": "users",
@@ -690,13 +690,20 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "empresa",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_visitas_responsavel ON visitas_comerciais (responsavel)",
         "CREATE INDEX idx_visitas_data ON visitas_comerciais (data)",
         "CREATE INDEX idx_visitas_negocio ON visitas_comerciais (negocio)",
-        "CREATE INDEX idx_visitas_contato ON visitas_comerciais (contato)"
+        "CREATE INDEX idx_visitas_contato ON visitas_comerciais (contato)",
+        "CREATE INDEX `idx_visitas_empresa` ON `visitas_comerciais` (empresa)"
       ]
     },
     {
