@@ -211,6 +211,31 @@ export interface Contrato {
   }
 }
 
+// Ordem de serviço executada para um cliente da unidade de serviços
+// (coleção "ordens_servico" no Skip Cloud).
+export type OrdemServicoStatus = 'aberta' | 'em execução' | 'concluída' | 'cancelada'
+
+export interface OrdemServico {
+  id: string
+  cliente: string
+  contrato?: string
+  equipamento?: string
+  descricao: string
+  data_abertura: string
+  prazo_acordado?: string
+  data_encerramento?: string
+  status: OrdemServicoStatus
+  responsavel_tecnico?: string
+  observacoes?: string
+  created: string
+  updated: string
+  expand?: {
+    cliente?: Contact
+    contrato?: Contrato
+    responsavel_tecnico?: User
+  }
+}
+
 export interface Activity {
   id: string
   title: string
