@@ -24,6 +24,7 @@ import { toast } from 'sonner'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
 import { KpisFaixa, type PeriodoFaixa } from '@/components/KpisFaixa'
 import { FunilVendas } from '@/components/FunilVendas'
+import { CustoAquisicao } from '@/components/CustoAquisicao'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -202,6 +203,8 @@ export default function Index() {
         <div className="lg:col-span-2">
           <FunilVendas periodo={periodo} />
         </div>
+
+        <CustoAquisicao periodo={periodo} />
 
         <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
