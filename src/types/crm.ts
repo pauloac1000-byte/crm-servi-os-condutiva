@@ -226,6 +226,9 @@ export interface OrdemServico {
   data_abertura: string
   prazo_acordado?: string
   data_encerramento?: string
+  // true = encerrada dentro do prazo acordado (gravado pelo hook no backend);
+  // null/ausente = concluída sem prazo ou sem data de encerramento
+  no_prazo?: boolean
   status: OrdemServicoStatus
   responsavel_tecnico?: string
   observacoes?: string

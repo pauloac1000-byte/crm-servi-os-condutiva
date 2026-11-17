@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T10:32:40.078Z",
+  "generatedAt": "2026-11-17T10:37:35.881Z",
   "collections": [
     {
       "name": "users",
@@ -1093,6 +1093,12 @@
         {
           "name": "empresa",
           "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "no_prazo",
+          "type": "bool",
           "required": false,
           "system": false
         }

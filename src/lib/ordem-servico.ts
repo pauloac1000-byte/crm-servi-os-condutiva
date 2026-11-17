@@ -47,3 +47,52 @@ export const isAtrasada = (os: OrdemServico) => {
   if (os.status === 'concluída' || os.status === 'cancelada') return false
   return os.prazo_acordado.split(' ')[0].split('T')[0] < hojeISO()
 }
+
+// Parte AAAA-MM-DD de uma data PocketBase (sem deslocamento de fuso)
+const parteData = (d?: string) => d?.split(' ')[0].split('T')[0] || ''
+
+// Indicador de situação de prazo, em dias corridos a partir de hoje:
+//   "no-prazo"    → encerrada dentro do prazo acordado (no_prazo true)
+//   "fora-prazo"  → encerrada fora do prazo (no_prazo false)
+//   "vencendo"    → aberta/em execução com prazo vencendo em até 2 dias (ou já vencida)
+//   null          → sem indicador (cancelada, concluída sem prazo/encerramento,
+//                    ou aberta com prazo ainda distante)
+export const situacaoPrazoOS = (
+  os: OrdemServico,
+): 'no-prazo' | 'fora-prazo' | 'vencendo' | null => {
+  if (os.status === 'concluída') {
+    if (os.no_prazo === true) return 'no-prazo'
+    if (os.no_prazo === false) return 'fora-prazo'
+    return null
+  }
+  if (os.status === 'cancelada') return null
+  // aberta / em execução: prazo vencendo em até 2 dias (ou já vencido)
+  const prazo = parteData(os.prazo_acordado)
+  if (!prazo) return null
+  const limite = new Date()
+  limite.setDate(limite.getDate() + 2)
+  const limiteISO = `${limite.getFullYear()}-${String(limite.getMonth() + 1).padStart(2, '0')}-${String(limite.getDate()).padStart(2, '0')}`
+  return prazo <= limiteISO ? 'vencendo' : null
+}
+
+// Cores do indicador de situação de prazo
+export const situacaoPrazoClasses: Record<string, string> = {
+  'no-prazo': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'fora-prazo': 'bg-rose-50 text-rose-700 border-rose-200',
+  vencendo: 'bg-amber-50 text-amber-700 border-amber-200',
+}
+
+export const situacaoPrazoRotulo: Record<string, string> = {
+  'no-prazo': 'No prazo',
+  'fora-prazo': 'Fora do prazo',
+  vencendo: 'Prazo vencendo',
+}
+
+// Taxa de execução no prazo (%): concluídas dentro do prazo ÷ total concluídas.
+// null quando não há OS concluídas no recorte ("—" na tela).
+export const taxaNoPrazo = (ordens: OrdemServico[]): number | null => {
+  const concluidas = ordens.filter((os) => os.status === 'concluída')
+  if (concluidas.length === 0) return null
+  const noPrazo = concluidas.filter((os) => os.no_prazo === true).length
+  return Math.round((noPrazo / concluidas.length) * 100)
+}

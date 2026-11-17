@@ -21,7 +21,11 @@ import {
   ORDEM_SERVICO_STATUS,
   formatarDataOS,
   isAtrasada,
+  situacaoPrazoClasses,
+  situacaoPrazoOS,
+  situacaoPrazoRotulo,
   statusOsClasses,
+  taxaNoPrazo,
 } from '@/lib/ordem-servico'
 import { toast } from 'sonner'
 
@@ -87,6 +91,9 @@ export default function OrdensServico() {
     const dentroFim = !dataFim || (abertura !== '' && abertura <= dataFim)
     return matchesSearch && matchesStatus && matchesCliente && dentroInicio && dentroFim
   })
+
+  const taxa = taxaNoPrazo(filtered)
+  const concluidasPeriodo = filtered.filter((os) => os.status === 'concluída').length
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -161,6 +168,22 @@ export default function OrdensServico() {
         </div>
       </div>
 
+      {/* Taxa de execução no prazo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase">
+            Taxa de execução no prazo
+          </p>
+          <p className="text-2xl font-black text-slate-900">{taxa === null ? '—' : `${taxa}%`}</p>
+        </div>
+        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase">
+            OS concluídas no período
+          </p>
+          <p className="text-2xl font-black text-slate-900">{concluidasPeriodo}</p>
+        </div>
+      </div>
+
       {/* Lista de OS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((os) => (
@@ -175,12 +198,24 @@ export default function OrdensServico() {
                 </p>
                 <p className="text-xs text-slate-500 line-clamp-2">{os.descricao}</p>
               </div>
-              <Badge
-                variant="outline"
-                className={`capitalize shrink-0 ${statusOsClasses(os.status)}`}
-              >
-                {os.status}
-              </Badge>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <Badge variant="outline" className={`capitalize ${statusOsClasses(os.status)}`}>
+                  {os.status}
+                </Badge>
+                {(() => {
+                  const situacao = situacaoPrazoOS(os)
+                  if (!situacao) return null
+                  return (
+                    <Badge
+                      variant="outline"
+                      className={situacaoPrazoClasses[situacao]}
+                      title={situacaoPrazoRotulo[situacao]}
+                    >
+                      {situacaoPrazoRotulo[situacao]}
+                    </Badge>
+                  )
+                })()}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
