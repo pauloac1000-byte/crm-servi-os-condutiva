@@ -44,7 +44,7 @@ onRecordCreate((e) => {
   if (!tipo) tipo = 'novo'
 
   try {
-    const colecao = app.findCollectionByNameOrId('movimentos_receita')
+    const colecao = e.app.findCollectionByNameOrId('movimentos_receita')
     const mov = new Record(colecao)
     mov.set('contrato', record.id)
     mov.set('competencia', comp)
@@ -52,7 +52,7 @@ onRecordCreate((e) => {
     mov.set('valor_mensal', valor)
     // Automático: responsável = dono do contrato (ou quem criou, como fallback)
     mov.set('responsavel', record.getString('responsavel') || (e.auth ? e.auth.id : ''))
-    app.save(mov)
+    e.app.save(mov)
   } catch (err) {
     console.log('contratos_movimentos: falha ao gravar movimento de criação: ' + err)
   }
@@ -75,7 +75,7 @@ onRecordUpdate((e) => {
     return fallbackAgora
   }
   const gravarMovimento = function (comp, tipo, valorMensal) {
-    const colecao = app.findCollectionByNameOrId('movimentos_receita')
+    const colecao = e.app.findCollectionByNameOrId('movimentos_receita')
     const mov = new Record(colecao)
     mov.set('contrato', record.id)
     mov.set('competencia', comp)
@@ -83,7 +83,7 @@ onRecordUpdate((e) => {
     mov.set('valor_mensal', valorMensal)
     // Automático: responsável = dono do contrato (ou quem editou, como fallback)
     mov.set('responsavel', record.getString('responsavel') || (e.auth ? e.auth.id : ''))
-    app.save(mov)
+    e.app.save(mov)
   }
 
   const statusDepois = record.getString('status')

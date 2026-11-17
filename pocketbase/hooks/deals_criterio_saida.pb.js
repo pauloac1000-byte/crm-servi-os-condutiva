@@ -18,6 +18,10 @@
 // API responde 200 — era exatamente o bug do arrastar para a etapa seguinte.
 // A validação do critério de saída roda ANTES de zerar o checklist: ela lê os
 // itens marcados que chegam no request (record), nunca um estado já zerado.
+//
+// Acesso ao banco no JSVM é via e.app (a variável global "app" NÃO existe em
+// hooks de registro — só em rotas customizadas routerAdd, onde se faz
+// const app = e.app).
 
 onRecordUpdate((e) => {
   const record = e.record
@@ -39,8 +43,8 @@ onRecordUpdate((e) => {
   let ordemAntes = 0
   let ordemDepois = 0
   try {
-    etapaAntesRec = app.findRecordById('etapas_funil', etapaAntes)
-    etapaDepoisRec = app.findRecordById('etapas_funil', etapaDepois)
+    etapaAntesRec = e.app.findRecordById('etapas_funil', etapaAntes)
+    etapaDepoisRec = e.app.findRecordById('etapas_funil', etapaDepois)
     ordemAntes = etapaAntesRec.getInt('ordem')
     ordemDepois = etapaDepoisRec.getInt('ordem')
   } catch (err) {
@@ -89,7 +93,7 @@ onRecordUpdate((e) => {
       let isAdmin = false
       if (auth) {
         try {
-          const userRec = app.findRecordById('users', auth.id)
+          const userRec = e.app.findRecordById('users', auth.id)
           isAdmin = userRec.getString('role') === 'admin'
         } catch (_) {
           isAdmin = false
@@ -105,7 +109,7 @@ onRecordUpdate((e) => {
 
     // Avanço válido: grava no histórico do negócio
     try {
-      const colecaoHistorico = app.findCollectionByNameOrId('historico_negocios')
+      const colecaoHistorico = e.app.findCollectionByNameOrId('historico_negocios')
       const hist = new Record(colecaoHistorico)
       hist.set('deal', record.id)
       hist.set('owner', e.auth ? e.auth.id : original.getString('owner'))
@@ -132,7 +136,7 @@ onRecordUpdate((e) => {
       if (faltam.length > 0) {
         hist.set('justificativa', justificativa)
       }
-      app.save(hist)
+      e.app.save(hist)
     } catch (err) {
       // Falha ao gravar histórico não pode impedir a troca de etapa nem pular o write.
       console.log('deals_criterio_saida: falha ao gravar histórico: ' + err)

@@ -51,10 +51,10 @@ onRecordUpdate((e) => {
   // Evento no histórico (coleção historico_negocios), silencioso em caso de
   // erro — a estampa na deals é o dado crítico e não deve ser bloqueada.
   try {
-    const colecaoHistorico = app.findCollectionByNameOrId('historico_negocios')
+    const colecaoHistorico = e.app.findCollectionByNameOrId('historico_negocios')
     let nomeEtapa = etapaDepois
     try {
-      nomeEtapa = app.findRecordById('etapas_funil', etapaDepois).getString('nome')
+      nomeEtapa = e.app.findRecordById('etapas_funil', etapaDepois).getString('nome')
     } catch (_) {}
     const hist = new Record(colecaoHistorico)
     hist.set('deal', record.id)
@@ -63,7 +63,7 @@ onRecordUpdate((e) => {
     hist.set('titulo', 'Entrada em etapa: ' + nomeEtapa)
     hist.set('descricao', 'Negócio entrou na etapa "' + nomeEtapa + '".')
     hist.set('etapa_para', etapaDepois)
-    app.save(hist)
+    e.app.save(hist)
   } catch (err) {
     console.log('deals_historico_etapas: falha ao gravar histórico: ' + err)
   }
