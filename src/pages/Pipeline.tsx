@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getPipelineStages } from '@/services/pipeline_stages'
-import { getDeals, updateDeal } from '@/services/deals'
+import { getDeals, getDeal, updateDeal } from '@/services/deals'
 import { getContacts } from '@/services/contacts'
 import { EtapaFunil, Deal, Contact, DealStatus } from '@/types/crm'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, MoreVertical, Calendar, User, DollarSign } from 'lucide-react'
+import { Plus, MoreVertical, Calendar, User as UserIcon, DollarSign } from 'lucide-react'
 import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -18,6 +18,9 @@ import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { IndicadorEtapa } from '@/components/IndicadorEtapa'
 import { diasNaEtapa } from '@/lib/dias-na-etapa'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
+import { ContratoModal } from '@/components/ContratoModal'
+import { getEtapaCompromisso } from '@/lib/etapa-compromisso'
+import { Contrato } from '@/types/crm'
 
 export default function Pipeline() {
   const [stages, setStages] = useState<EtapaFunil[]>([])
@@ -32,6 +35,11 @@ export default function Pipeline() {
     deal: Deal
     destino: string
   } | null>(null)
+  // Contrato pré-preenchido: abre quando o negócio chega à etapa 6 Compromisso
+  // com o critério de saída cumprido (também via drag-and-drop). Fechar o
+  // formulário não desfaz o avanço — o contrato pode ser cadastrado depois.
+  const [contratoParaDeal, setContratoParaDeal] = useState<Deal | null>(null)
+  const etapaCompromissoId = useMemo(() => getEtapaCompromisso(stages), [stages])
 
   const loadPipelineData = async () => {
     try {
@@ -109,6 +117,19 @@ export default function Pipeline() {
         ...extras,
       })
       toast.success('Etapa do negócio atualizada!')
+      // Chegou à etapa 6 Compromisso com critério cumprido: oferece o cadastro
+      // do contrato já preenchido (deals/contacts já estão em cache — usa o
+      // recarregado para pegar valores gravados pelos hooks do servidor).
+      // O próprio PocketBase rejeita o avanço sem critério; se chegou aqui,
+      // foi com critério cumprido (ou forçado pelo admin com justificativa).
+      if (etapaCompromissoId && targetStageId === etapaCompromissoId.id) {
+        try {
+          const fresh = await getDeal(currentDeal.id)
+          setContratoParaDeal(fresh)
+        } catch {
+          setContratoParaDeal(currentDeal)
+        }
+      }
     } catch (err) {
       // O backend também valida — respeita a mensagem exata do bloqueio
       const msg = getErrorMessage(err)
@@ -119,6 +140,12 @@ export default function Pipeline() {
     } finally {
       setDraggedDealId(null)
     }
+  }
+
+  // Recarrega dados após o contrato registrado (ou fechado sem salvar)
+  const handleContratoFechado = () => {
+    setContratoParaDeal(null)
+    loadPipelineData()
   }
 
   const statusBadge: Record<DealStatus, { label: string; className: string }> = {
@@ -247,7 +274,7 @@ export default function Pipeline() {
 
                     {deal.expand?.contact && (
                       <p className="text-xs text-slate-500 flex items-center gap-1">
-                        <User className="h-3 w-3 text-slate-400" />
+                        <UserIcon className="h-3 w-3 text-slate-400" />
                         <span className="truncate">{deal.expand.contact.name}</span>
                       </p>
                     )}
@@ -287,6 +314,25 @@ export default function Pipeline() {
         open={!!selectedDeal}
         onClose={() => setSelectedDeal(null)}
         onUpdated={loadPipelineData}
+      />
+
+      {/* Contrato pré-preenchido com os dados do negócio que chegou à etapa 6.
+          Fechar sem salvar não desfaz o avanço — pode cadastrar depois em /contratos. */}
+      <ContratoModal
+        open={!!contratoParaDeal}
+        onOpenChange={(open) => {
+          if (!open) handleContratoFechado()
+        }}
+        contacts={contacts}
+        deals={deals}
+        users={[]}
+        contratoToEdit={null}
+        dealPrefill={contratoParaDeal}
+        onSuccess={() => {
+          setContratoParaDeal(null)
+          loadPipelineData()
+          toast.success('Contrato registrado com sucesso!')
+        }}
       />
 
       {/* Admin: forçar avanço sem o critério cumprido, com justificativa */}

@@ -132,6 +132,11 @@ export interface HistoricoNegocio {
   }
 }
 
+// Contrato assinado — fonte da receita contratada da unidade de serviços
+// (coleção "contratos" no Skip Cloud). Declaração unificada mais abaixo.
+export type ContratoStatus = 'ativo' | 'encerrado' | 'suspenso'
+export type ContratoTipo = 'novo' | 'renovação' | 'expansão' | 'contração' | 'churn'
+
 // Visita comercial registrada para gerar ou avançar leads
 // (coleção "visitas_comerciais" no Skip Cloud). custo_total é calculado
 // no servidor (hook), somando os valores monetários da visita.
@@ -158,6 +163,30 @@ export interface VisitaComercial {
   expand?: {
     contato?: Contact
     negocio?: Deal
+    responsavel?: User
+  }
+}
+
+// Contrato assinado — fonte da receita contratada da unidade de serviços
+// (coleção "contratos" no Skip Cloud).
+export interface Contrato {
+  id: string
+  cliente?: string
+  negocio?: string
+  plano?: string
+  responsavel?: string
+  valor_mensal?: number
+  valor_implantacao?: number
+  data_inicio?: string
+  data_fim?: string
+  status?: ContratoStatus
+  tipo?: ContratoTipo
+  created: string
+  updated: string
+  expand?: {
+    cliente?: Contact
+    negocio?: Deal
+    plano?: Plano
     responsavel?: User
   }
 }

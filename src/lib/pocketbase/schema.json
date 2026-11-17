@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T00:12:38.569Z",
+  "generatedAt": "2026-11-17T00:20:22.255Z",
   "collections": [
     {
       "name": "users",
@@ -828,6 +828,106 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_planos_nome ON planos (nome)"]
+    },
+    {
+      "name": "contratos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && responsavel = @request.auth.id",
+        "view": "@request.auth.id != '' && responsavel = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && responsavel = @request.auth.id",
+        "delete": "@request.auth.id != '' && responsavel = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "cliente",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "contacts"
+        },
+        {
+          "name": "negocio",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "deals"
+        },
+        {
+          "name": "plano",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "planos"
+        },
+        {
+          "name": "responsavel",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "valor_mensal",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_implantacao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_inicio",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_fim",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["ativo", "encerrado", "suspenso"]
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["novo", "renovação", "expansão", "contração", "churn"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_contratos_responsavel ON contratos (responsavel)",
+        "CREATE INDEX idx_contratos_status ON contratos (status)",
+        "CREATE INDEX idx_contratos_data_inicio ON contratos (data_inicio)",
+        "CREATE INDEX idx_contratos_cliente ON contratos (cliente)",
+        "CREATE INDEX idx_contratos_negocio ON contratos (negocio)"
+      ]
     }
   ]
 }

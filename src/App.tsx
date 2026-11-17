@@ -12,6 +12,7 @@ import Deals from './pages/Deals'
 import Contacts from './pages/Contacts'
 import Activities from './pages/Activities'
 import Visitas from './pages/Visitas'
+import Contratos from './pages/Contratos'
 import UsersPage from './pages/Users'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/activities" element={<Activities />} />
               <Route path="/visitas" element={<Visitas />} />
+              <Route path="/contratos" element={<Contratos />} />
 
               <Route element={<AdminRoute />}>
                 <Route path="/users" element={<UsersPage />} />
