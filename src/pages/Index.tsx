@@ -22,6 +22,7 @@ import { Link } from 'react-router-dom'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
+import { KpisFaixa } from '@/components/KpisFaixa'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -119,6 +120,8 @@ export default function Index() {
           </Button>
         </div>
       </div>
+
+      <KpisFaixa />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <Card className="border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all rounded-2xl">
