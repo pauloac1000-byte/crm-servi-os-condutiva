@@ -218,6 +218,8 @@ export type OrdemServicoStatus = 'aberta' | 'em execução' | 'concluída' | 'ca
 export interface OrdemServico {
   id: string
   cliente: string
+  // nome da empresa do cliente (denormalizado do contato, escolhido no modal)
+  empresa?: string
   contrato?: string
   equipamento?: string
   descricao: string

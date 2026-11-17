@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T10:17:48.674Z",
+  "generatedAt": "2026-11-17T10:32:40.078Z",
   "collections": [
     {
       "name": "users",
@@ -1089,13 +1089,20 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "empresa",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_ordens_servico_cliente ON ordens_servico (cliente)",
         "CREATE INDEX idx_ordens_servico_contrato ON ordens_servico (contrato)",
         "CREATE INDEX idx_ordens_servico_status ON ordens_servico (status)",
-        "CREATE INDEX idx_ordens_servico_data_abertura ON ordens_servico (data_abertura)"
+        "CREATE INDEX idx_ordens_servico_data_abertura ON ordens_servico (data_abertura)",
+        "CREATE INDEX `idx_ordens_servico_empresa` ON `ordens_servico` (empresa)"
       ]
     }
   ]
