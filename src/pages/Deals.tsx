@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getDeals, deleteDeal } from '@/services/deals'
 import { getPipelineStages } from '@/services/pipeline_stages'
 import { getContacts } from '@/services/contacts'
@@ -21,6 +22,7 @@ import { toast } from 'sonner'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 export default function Deals() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [deals, setDeals] = useState<Deal[]>([])
   const [stages, setStages] = useState<EtapaFunil[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -47,6 +49,18 @@ export default function Deals() {
   }, [])
 
   useRealtime('deals', () => loadData())
+
+  // Deep-link do Dashboard ("Precisa de ação"): ?deal=<id> abre o drawer de
+  // detalhes do negócio (mesmo drawer usado na própria lista).
+  useEffect(() => {
+    const dealId = searchParams.get('deal')
+    if (!dealId || deals.length === 0) return
+    const deal = deals.find((d) => d.id === dealId)
+    if (deal) {
+      setSelectedDealDetail(deal)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, deals])
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)

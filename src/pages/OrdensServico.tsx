@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getOrdensServico, deleteOrdemServico } from '@/services/ordens_servico'
 import { getContacts } from '@/services/contacts'
 import { getContratos } from '@/services/contratos'
@@ -30,6 +31,7 @@ import {
 import { toast } from 'sonner'
 
 export default function OrdensServico() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [ordens, setOrdens] = useState<OrdemServico[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [contratos, setContratos] = useState<Contrato[]>([])
@@ -65,6 +67,27 @@ export default function OrdensServico() {
   }, [])
 
   useRealtime('ordens_servico', () => loadData())
+
+  // Deep-link do Dashboard ("Precisa de ação"): ?os=<id> abre a OS em edição;
+  // ?situacao=vencendo aplica o filtro de situação de prazo.
+  useEffect(() => {
+    const osId = searchParams.get('os')
+    if (!osId || ordens.length === 0) return
+    const os = ordens.find((o) => o.id === osId)
+    if (os) {
+      setOsToEdit(os)
+      setModalOpen(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, ordens])
+
+  useEffect(() => {
+    const situacao = searchParams.get('situacao')
+    if (situacao && situacao !== 'all') {
+      setSituacaoFilter(situacao)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams])
 
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta ordem de serviço?')) {

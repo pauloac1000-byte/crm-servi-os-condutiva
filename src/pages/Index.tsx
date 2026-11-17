@@ -27,6 +27,7 @@ import { FunilVendas } from '@/components/FunilVendas'
 import { CustoAquisicao } from '@/components/CustoAquisicao'
 import { MetasBloco } from '@/components/MetasBloco'
 import { MrrNrrBloco } from '@/components/MrrNrrBloco'
+import { PrecisaAcao } from '@/components/PrecisaAcao'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -247,6 +248,8 @@ export default function Index() {
           </CardContent>
         </Card>
       </div>
+
+      <PrecisaAcao />
 
       <CustoAquisicao periodo={periodo} />
 
