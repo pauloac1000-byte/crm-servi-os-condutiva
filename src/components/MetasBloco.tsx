@@ -18,6 +18,7 @@ import {
   formatarPercentualMetas,
 } from '@/services/metas-acompanhamento'
 import { Target } from 'lucide-react'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import {
   GradeGrafico,
   eixoX,
@@ -65,6 +66,8 @@ const rotuloMes = (comp: string) => {
 
 export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
   const { dados, loading, erro } = useMetasAcompanhamento(entrada)
+  // movimento reduzido (prefers-reduced-motion): desliga a animação do Recharts
+  const reduzAnimacao = usePrefersReducedMotion()
   // ano do acompanhamento (vem do filtro global do Dashboard via entrada)
   const ano = entrada.ano
 
@@ -172,6 +175,7 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
                     name="Realizado do mês"
                     fill={COR_LIME_ESCURO}
                     radius={[3, 3, 0, 0]}
+                    isAnimationActive={!reduzAnimacao}
                   >
                     <LabelList
                       dataKey="realizado"
@@ -192,6 +196,7 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
                     strokeWidth={0}
                     dot={{ r: 3.5, fill: COR_ALERTA, stroke: '#fff', strokeWidth: 1 }}
                     connectNulls
+                    isAnimationActive={!reduzAnimacao}
                   />
                   <Line
                     yAxisId="acumulado"
@@ -202,6 +207,7 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
                     strokeWidth={2}
                     dot={{ r: 3, fill: COR_LIME_CLARO, strokeWidth: 0 }}
                     connectNulls
+                    isAnimationActive={!reduzAnimacao}
                     label={rotuloFimDeLinha(
                       serieGrafico.length - 1,
                       (v) => (v !== null ? formatarMoedaMetas(v) : null),
@@ -217,6 +223,7 @@ export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
                     strokeWidth={2}
                     strokeDasharray="5 4"
                     dot={false}
+                    isAnimationActive={!reduzAnimacao}
                     label={rotuloFimDeLinha(
                       serieGrafico.length - 1,
                       (v) => (v !== null ? formatarMoedaMetas(v) : null),

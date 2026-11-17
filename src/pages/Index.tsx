@@ -150,7 +150,7 @@ export default function Index() {
             Desempenho da unidade de serviços Condutiva Tecnologia
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={() => setContactModalOpen(true)}
             variant="outline"
@@ -261,7 +261,7 @@ export default function Index() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <FunilVendas
             entrada={{
               dataDe: periodoAtual.dataDe,
@@ -353,22 +353,24 @@ export default function Index() {
           </Link>
         </CardHeader>
         <CardContent className="pt-2">
+          {/* No celular as colunas de apoio (Contato, Previsão) ficam ocultas
+              para a tabela caber sem rolagem horizontal — no desktop nada muda. */}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="p-3 rounded-l-lg">Título</th>
-                  <th className="p-3">Contato</th>
+                  <th className="p-3 hidden sm:table-cell">Contato</th>
                   <th className="p-3">Etapa</th>
                   <th className="p-3">Valor</th>
-                  <th className="p-3 rounded-r-lg">Previsão</th>
+                  <th className="p-3 rounded-r-lg hidden sm:table-cell">Previsão</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {recentDeals.map((deal) => (
                   <tr key={deal.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3 font-semibold text-slate-900">{deal.title}</td>
-                    <td className="p-3 text-xs text-slate-500">
+                    <td className="p-3 text-xs text-slate-500 hidden sm:table-cell">
                       {deal.expand?.contact?.name || 'N/A'}
                     </td>
                     <td className="p-3">
@@ -392,7 +394,7 @@ export default function Index() {
                     <td className="p-3 font-bold text-slate-900">
                       {formatCurrency(valorOportunidade(deal))}
                     </td>
-                    <td className="p-3 text-xs text-slate-400">
+                    <td className="p-3 text-xs text-slate-400 hidden sm:table-cell">
                       {deal.expected_close_date
                         ? new Date(deal.expected_close_date).toLocaleDateString('pt-BR')
                         : 'N/A'}

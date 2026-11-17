@@ -36,15 +36,15 @@ export function DashboardFiltrosBar({ selecao, responsaveis, onChange }: Props) 
 
   return (
     <div className="flex flex-wrap items-end gap-3">
-      {/* período */}
-      <div className="flex flex-col gap-1">
+      {/* período — no celular ocupa a largura toda, empilhado */}
+      <div className="flex flex-col gap-1 w-full sm:w-auto">
         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
           <Calendar className="h-3.5 w-3.5" />
           Período
         </label>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={selecao.tipo} onValueChange={(v) => atualizar({ tipo: v as PeriodoTipo })}>
-            <SelectTrigger className="w-[210px] h-9 bg-white rounded-lg text-sm">
+            <SelectTrigger className="w-full sm:w-[210px] h-9 bg-white rounded-lg text-sm">
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
@@ -78,16 +78,25 @@ export function DashboardFiltrosBar({ selecao, responsaveis, onChange }: Props) 
       </div>
 
       {/* responsável comercial */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+      <div className="flex flex-col gap-1 w-full sm:w-auto">
+        <label
+          htmlFor="filtro-responsavel"
+          className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5"
+        >
           <User className="h-3.5 w-3.5" />
           Responsável comercial
         </label>
+        {/* label associado por id ao trigger (o shadcn SelectTrigger não
+            recebe <label> nativo; htmlFor + aria-labelledby cobrem teclado
+            e leitores de tela) */}
         <Select
           value={selecao.responsavel || 'todos'}
           onValueChange={(v) => atualizar({ responsavel: v === 'todos' ? '' : v })}
         >
-          <SelectTrigger className="w-[210px] h-9 bg-white rounded-lg text-sm">
+          <SelectTrigger
+            id="filtro-responsavel"
+            className="w-full sm:w-[210px] h-9 bg-white rounded-lg text-sm"
+          >
             <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>

@@ -18,6 +18,7 @@ import {
   formatarPercentualNrr,
 } from '@/services/mrr-nrr'
 import { Repeat } from 'lucide-react'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import type { KpiSituacao } from '@/services/kpis'
 import {
   GradeGrafico,
@@ -88,6 +89,8 @@ interface Props {
 
 export function MrrNrrBloco({ entrada }: Props) {
   const { dados, loading, erro } = useMrrNrr(entrada)
+  // movimento reduzido (prefers-reduced-motion): desliga a animação do Recharts
+  const reduzAnimacao = usePrefersReducedMotion()
 
   const leitura = leituraNrr(dados?.nrr ?? null, dados?.situacaoNrr ?? null)
 
@@ -186,6 +189,7 @@ export function MrrNrrBloco({ entrada }: Props) {
                       dot={{ r: 3, fill: COR_LIME_CLARO, strokeWidth: 0 }}
                       activeDot={{ r: 4 }}
                       connectNulls
+                      isAnimationActive={!reduzAnimacao}
                       label={rotuloFimDeLinha(
                         (dados?.mrrMensal ?? []).length - 1,
                         (v) => (v !== null ? formatarMoedaMrr(v) : null),
@@ -231,7 +235,12 @@ export function MrrNrrBloco({ entrada }: Props) {
                           formatter={(valor) => formatarMoedaMrr(Number(valor))}
                         />
                         {/* rótulo direto do valor no topo de cada barra (sem legenda) */}
-                        <Bar dataKey="valor" name="Valor" radius={[3, 3, 0, 0]}>
+                        <Bar
+                          dataKey="valor"
+                          name="Valor"
+                          radius={[3, 3, 0, 0]}
+                          isAnimationActive={!reduzAnimacao}
+                        >
                           {composicao.map((c) => (
                             <Cell key={c.nome} fill={c.cor} />
                           ))}

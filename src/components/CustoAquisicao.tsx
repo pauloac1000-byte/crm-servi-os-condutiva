@@ -12,6 +12,7 @@ import {
   LabelList,
 } from 'recharts'
 import { formatarMoeda, formatarNumero, formatarIndicadorMoeda } from '@/services/custo-aquisicao'
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion'
 import {
   GradeGrafico,
   eixoX,
@@ -57,6 +58,8 @@ interface Props {
 
 export function CustoAquisicao({ entrada }: Props) {
   const { dados, loading, erro } = useCustoAquisicao(entrada)
+  // movimento reduzido (prefers-reduced-motion): desliga a animação do Recharts
+  const reduzAnimacao = usePrefersReducedMotion()
 
   if (loading) {
     return (
@@ -164,6 +167,7 @@ export function CustoAquisicao({ entrada }: Props) {
                   name="Gasto em visitas"
                   fill={COR_LIME_ESCURO}
                   radius={[3, 3, 0, 0]}
+                  isAnimationActive={!reduzAnimacao}
                 >
                   <LabelList
                     dataKey="gasto"
@@ -183,6 +187,7 @@ export function CustoAquisicao({ entrada }: Props) {
                   strokeWidth={2}
                   dot={{ r: 3, fill: COR_LIME_CLARO, strokeWidth: 0 }}
                   activeDot={{ r: 4 }}
+                  isAnimationActive={!reduzAnimacao}
                   label={{
                     position: 'top',
                     fontSize: 10,

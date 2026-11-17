@@ -40,51 +40,62 @@ export function FunilVendas({ entrada }: { entrada: FunilEntrada }) {
           <span>Funil de Vendas por Etapa</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pt-4">
-        {erro && <p className="text-xs text-rose-600">Não foi possível calcular o funil.</p>}
+      {/* No celular o funil rola na horizontal (rolagem exclusiva do
+          Dashboard: barras largas ficam legíveis) — com tabIndex e aria para
+          teclado/leitores de tela. No desktop nada muda: sem rolagem. */}
+      <CardContent
+        className="space-y-4 pt-4 max-md:overflow-x-auto max-md:-mx-5 max-md:px-5"
+        tabIndex={vazio ? undefined : 0}
+        aria-label="Funil de vendas por etapa — role para os lados para ver todas as etapas"
+      >
+        {/* largura mínima no celular: garante que as 7 etapas fiquem legíveis e
+            que a rolagem horizontal (exclusiva deste bloco) seja acionada */}
+        <div className="max-md:min-w-[520px]">
+          {erro && <p className="text-xs text-rose-600">Não foi possível calcular o funil.</p>}
 
-        {vazio ? (
-          <div className="py-8 text-center space-y-1">
-            <p className="text-2xl font-black text-slate-300">—</p>
-            <p className="text-xs text-slate-400">Sem movimentação no período</p>
-          </div>
-        ) : (
-          dados && (
-            <>
-              {/* topo: conversão total e tempo médio de ciclo */}
-              <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
-                <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Conversão total (Lead → Cliente ativo)
-                  </p>
-                  <p className="text-xl font-black text-slate-900">
-                    {fmtPercentual(dados.conversaoTotal)}
-                  </p>
+          {vazio ? (
+            <div className="py-8 text-center space-y-1">
+              <p className="text-2xl font-black text-slate-300">—</p>
+              <p className="text-xs text-slate-400">Sem movimentação no período</p>
+            </div>
+          ) : (
+            dados && (
+              <>
+                {/* topo: conversão total e tempo médio de ciclo */}
+                <div className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Conversão total (Lead → Cliente ativo)
+                    </p>
+                    <p className="text-xl font-black text-slate-900">
+                      {fmtPercentual(dados.conversaoTotal)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      Tempo médio de ciclo
+                    </p>
+                    <p className="text-xl font-black text-slate-900">
+                      {fmtDias(dados.tempoMedioCicloDias)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Tempo médio de ciclo
-                  </p>
-                  <p className="text-xl font-black text-slate-900">
-                    {fmtDias(dados.tempoMedioCicloDias)}
-                  </p>
-                </div>
-              </div>
 
-              {/* barras horizontais proporcionais, com conversão entre etapas */}
-              <div className="space-y-3">
-                {dados.etapas.map((etapa, i) => (
-                  <FunilLinha
-                    key={etapa.ordem}
-                    etapa={etapa}
-                    maximo={maximo}
-                    conversaoAnterior={i > 0 ? dados.etapas[i - 1].conversaoProxima : null}
-                  />
-                ))}
-              </div>
-            </>
-          )
-        )}
+                {/* barras horizontais proporcionais, com conversão entre etapas */}
+                <div className="space-y-3">
+                  {dados.etapas.map((etapa, i) => (
+                    <FunilLinha
+                      key={etapa.ordem}
+                      etapa={etapa}
+                      maximo={maximo}
+                      conversaoAnterior={i > 0 ? dados.etapas[i - 1].conversaoProxima : null}
+                    />
+                  ))}
+                </div>
+              </>
+            )
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -125,7 +136,7 @@ function FunilLinha({
       </div>
       <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full rounded-full barra-progresso"
           style={{ width: `${larguraBarra(etapa, maximo)}%`, backgroundColor: corBarra }}
         />
       </div>

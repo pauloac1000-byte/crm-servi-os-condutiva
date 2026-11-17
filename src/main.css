@@ -82,12 +82,49 @@
   }
 }
 
-/* Classe utilitária para números (KPI, tabela, gráfico):
-   IBM Plex Mono + dígitos de mesma largura */
+/* ============================================================
+   Acessibilidade
+   ============================================================ */
+
+/* Foco visível por teclado em TODOS os elementos interativos que não
+   usam um primitivo shadcn (que já tem focus-visible:ring embutido):
+   links, botões "crus", células clicáveis etc. O anel só aparece na
+   navegação por teclado (:focus-visible), nunca no clique do mouse. */
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  [role='button']:focus-visible,
+  [tabindex]:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--condutiva-lime-texto);
+    outline-offset: 2px;
+  }
+}
+
+/* Movimento reduzido: quando o sistema do usuário pede menos movimento
+   (prefers-reduced-motion: reduce), TODA animação e transição do sistema
+   para — sem pulos de conteúdo, sem fade, sem barra que "cresce". */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer utilities {
   .mono-nums {
     font-family: var(--font-numero);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Barra de progresso (atingimento de meta): semântica para leitores de
+     tela — o percentual escrito ao lado é a informação acessível. */
+  .barra-progresso {
+    transition: width 0.5s ease;
   }
 
   /* Número mono alinhado à direita (colunas de tabela, valores) */
@@ -136,7 +173,9 @@
     color: var(--condutiva-cinza);
   }
   .text-slate-400 {
-    color: #9ca3af;
+    /* contraste 4,5:1+ sobre branco/superfície (regra de acessibilidade);
+       era #9ca3af (2,8:1) — o token já cobre a Sidebar, que é branca */
+    color: #6b7280;
   }
   .text-slate-300 {
     color: #c6ccc6;
