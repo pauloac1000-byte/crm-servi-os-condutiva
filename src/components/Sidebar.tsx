@@ -9,6 +9,7 @@ import {
   Car,
   FileText,
   Wrench,
+  Target,
   ShieldCheck,
   LogOut,
 } from 'lucide-react'
@@ -34,6 +35,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     { label: 'Visitas', path: '/visitas', icon: Car },
     { label: 'Contratos', path: '/contratos', icon: FileText },
     { label: 'Ordens de Serviço', path: '/ordens-servico', icon: Wrench },
+    { label: 'Metas', path: '/metas', icon: Target },
     ...(isAdmin ? [{ label: 'Usuários', path: '/users', icon: ShieldCheck }] : []),
   ]
 

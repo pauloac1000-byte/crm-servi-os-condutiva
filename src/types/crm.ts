@@ -241,6 +241,30 @@ export interface OrdemServico {
   }
 }
 
+// Metas mensais e anuais dos KPIs da unidade de serviços
+// (coleção "metas" no Skip Cloud). Um registro por ano + mês + kpi;
+// mes vazio/0 representa a meta anual.
+export type MetaKpi =
+  | 'RCS'
+  | 'taxa_conversao_leads'
+  | 'ticket_medio'
+  | 'os_no_prazo'
+  | 'NRR'
+  | 'leads_qualificados'
+  | 'propostas_enviadas'
+  | 'custo_por_contrato'
+
+export interface Meta {
+  id: string
+  ano: number
+  // 0 ou ausente = meta anual
+  mes?: number
+  kpi: MetaKpi
+  valor_meta?: number
+  created: string
+  updated: string
+}
+
 export interface Activity {
   id: string
   title: string

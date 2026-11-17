@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T10:37:35.881Z",
+  "generatedAt": "2026-11-17T10:43:51.873Z",
   "collections": [
     {
       "name": "users",
@@ -1110,6 +1110,68 @@
         "CREATE INDEX idx_ordens_servico_data_abertura ON ordens_servico (data_abertura)",
         "CREATE INDEX `idx_ordens_servico_empresa` ON `ordens_servico` (empresa)"
       ]
+    },
+    {
+      "name": "metas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "ano",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "mes",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "kpi",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "RCS",
+            "taxa_conversao_leads",
+            "ticket_medio",
+            "os_no_prazo",
+            "NRR",
+            "leads_qualificados",
+            "propostas_enviadas",
+            "custo_por_contrato"
+          ]
+        },
+        {
+          "name": "valor_meta",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_metas_ano_mes_kpi ON metas (ano, mes, kpi)"]
     }
   ]
 }

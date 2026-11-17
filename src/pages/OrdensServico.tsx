@@ -37,6 +37,7 @@ export default function OrdensServico() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [clienteFilter, setClienteFilter] = useState<string>('all')
+  const [situacaoFilter, setSituacaoFilter] = useState<string>('all')
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -77,6 +78,13 @@ export default function OrdensServico() {
     }
   }
 
+  // Opções do filtro por situação de prazo (mesma lógica de situacaoPrazoOS)
+  const SITUACAO_FILTRO_OPCOES = [
+    { valor: 'no-prazo', rotulo: 'No prazo' },
+    { valor: 'fora-prazo', rotulo: 'Fora do prazo' },
+    { valor: 'vencendo', rotulo: 'Prazo vencendo/prazo estourado' },
+  ]
+
   // Filtro de período sobre a data de abertura (AAAA-MM-DD)
   const filtered = ordens.filter((os) => {
     const termo = search.toLowerCase()
@@ -86,10 +94,18 @@ export default function OrdensServico() {
       (os.equipamento || '').toLowerCase().includes(termo)
     const matchesStatus = statusFilter === 'all' || os.status === statusFilter
     const matchesCliente = clienteFilter === 'all' || os.cliente === clienteFilter
+    const matchesSituacao = situacaoFilter === 'all' || situacaoPrazoOS(os) === situacaoFilter
     const abertura = os.data_abertura ? os.data_abertura.split(' ')[0].split('T')[0] : ''
     const dentroInicio = !dataInicio || (abertura !== '' && abertura >= dataInicio)
     const dentroFim = !dataFim || (abertura !== '' && abertura <= dataFim)
-    return matchesSearch && matchesStatus && matchesCliente && dentroInicio && dentroFim
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesCliente &&
+      matchesSituacao &&
+      dentroInicio &&
+      dentroFim
+    )
   })
 
   const taxa = taxaNoPrazo(filtered)
@@ -134,6 +150,19 @@ export default function OrdensServico() {
               {ORDEM_SERVICO_STATUS.map((s) => (
                 <SelectItem key={s} value={s} className="capitalize">
                   {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={situacaoFilter} onValueChange={setSituacaoFilter}>
+            <SelectTrigger className="w-full sm:w-52 bg-slate-50">
+              <SelectValue placeholder="Situação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as situações</SelectItem>
+              {SITUACAO_FILTRO_OPCOES.map((op) => (
+                <SelectItem key={op.valor} value={op.valor}>
+                  {op.rotulo}
                 </SelectItem>
               ))}
             </SelectContent>
