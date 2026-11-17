@@ -137,6 +137,24 @@ export interface HistoricoNegocio {
 export type ContratoStatus = 'ativo' | 'encerrado' | 'suspenso'
 export type ContratoTipo = 'novo' | 'renovação' | 'expansão' | 'contração' | 'churn'
 
+// Movimento de receita recorrente (coleção "movimentos_receita" no Skip Cloud).
+// Um por evento: contrato criado (novo), valor alterado (expansão/contração),
+// encerramento (churn) ou lançamento manual. Competência no formato AAAA-MM.
+export interface MovimentoReceita {
+  id: string
+  contrato?: string
+  competencia?: string
+  tipo?: ContratoTipo
+  valor_mensal?: number
+  responsavel?: string
+  created: string
+  updated: string
+  expand?: {
+    contrato?: Contrato
+    responsavel?: User
+  }
+}
+
 // Visita comercial registrada para gerar ou avançar leads
 // (coleção "visitas_comerciais" no Skip Cloud). custo_total é calculado
 // no servidor (hook), somando os valores monetários da visita.
