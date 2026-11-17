@@ -11,7 +11,7 @@ export const KPIS: {
   rotulo: string
   formato: 'percentual' | 'moeda' | 'contagem'
 }[] = [
-  { kpi: 'RCS', rotulo: 'RCS (Receita de Serviços)', formato: 'percentual' },
+  { kpi: 'RCS', rotulo: 'RCS (Receita de Serviços)', formato: 'moeda' },
   { kpi: 'taxa_conversao_leads', rotulo: 'Taxa de conversão de leads', formato: 'percentual' },
   { kpi: 'ticket_medio', rotulo: 'Ticket médio', formato: 'moeda' },
   { kpi: 'os_no_prazo', rotulo: 'OS no prazo', formato: 'percentual' },

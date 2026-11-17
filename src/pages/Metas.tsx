@@ -128,6 +128,9 @@ export default function Metas() {
               <th className="text-left px-3 py-2.5 text-[10px] font-semibold text-slate-400 uppercase min-w-[220px]">
                 Indicador
               </th>
+              <th className="px-2 py-2.5 text-[10px] font-semibold text-slate-400 uppercase text-center bg-teal-50/60">
+                Ano
+              </th>
               {MESES_CURTOS.map((m) => (
                 <th
                   key={m}
@@ -136,9 +139,6 @@ export default function Metas() {
                   {m}
                 </th>
               ))}
-              <th className="px-2 py-2.5 text-[10px] font-semibold text-slate-400 uppercase text-center bg-teal-50/60">
-                Ano
-              </th>
               <th className="px-2 py-2.5 min-w-[140px]"></th>
             </tr>
           </thead>
@@ -162,6 +162,38 @@ export default function Metas() {
                     <span className="block text-[10px] text-slate-400">
                       {formato === 'percentual' ? '%' : formato === 'moeda' ? 'R$' : 'contagem'}
                     </span>
+                  </td>
+                  {/* coluna Ano = meta anual (mês 0), ao lado dos indicadores */}
+                  <td className="px-1 py-1.5 text-center bg-teal-50/60">
+                    {editando === editarCelula(kpi, 0) ? (
+                      <Input
+                        autoFocus
+                        className="h-8 w-20 text-xs text-center px-1"
+                        value={rascunho}
+                        inputMode="decimal"
+                        onChange={(e) => setRascunho(e.target.value)}
+                        onBlur={() => confirmarEdicao(kpi, 0)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') confirmarEdicao(kpi, 0)
+                          if (e.key === 'Escape') setEditando(null)
+                          e.stopPropagation()
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!isAdmin || algumEditando}
+                        onClick={() => iniciarEdicao(kpi, 0)}
+                        className={`w-20 h-8 rounded-lg text-xs font-bold transition-colors ${
+                          getValor(kpi, 0) !== undefined
+                            ? 'text-teal-800 hover:bg-teal-100'
+                            : 'text-slate-300 hover:bg-teal-50'
+                        } ${!isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
+                        title={isAdmin ? 'Clique para editar a meta anual' : 'Somente leitura'}
+                      >
+                        {formatarValor(kpi, getValor(kpi, 0))}
+                      </button>
+                    )}
                   </td>
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((mes) => {
                     const chave = editarCelula(kpi, mes)
@@ -200,38 +232,6 @@ export default function Metas() {
                       </td>
                     )
                   })}
-                  {/* coluna Ano = meta anual (mês 0) */}
-                  <td className="px-1 py-1.5 text-center bg-teal-50/60">
-                    {editando === editarCelula(kpi, 0) ? (
-                      <Input
-                        autoFocus
-                        className="h-8 w-20 text-xs text-center px-1"
-                        value={rascunho}
-                        inputMode="decimal"
-                        onChange={(e) => setRascunho(e.target.value)}
-                        onBlur={() => confirmarEdicao(kpi, 0)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') confirmarEdicao(kpi, 0)
-                          if (e.key === 'Escape') setEditando(null)
-                          e.stopPropagation()
-                        }}
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={!isAdmin || algumEditando}
-                        onClick={() => iniciarEdicao(kpi, 0)}
-                        className={`w-20 h-8 rounded-lg text-xs font-bold transition-colors ${
-                          getValor(kpi, 0) !== undefined
-                            ? 'text-teal-800 hover:bg-teal-100'
-                            : 'text-slate-300 hover:bg-teal-50'
-                        } ${!isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
-                        title={isAdmin ? 'Clique para editar a meta anual' : 'Somente leitura'}
-                      >
-                        {formatarValor(kpi, getValor(kpi, 0))}
-                      </button>
-                    )}
-                  </td>
                   <td className="px-2 py-1.5 text-center">
                     <Button
                       size="sm"
