@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getContacts, deleteContact } from '@/services/contacts'
+import { useAuth } from '@/hooks/use-auth'
 import { Contact } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
 export default function Contacts() {
+  const { isAdmin } = useAuth()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -174,26 +176,30 @@ export default function Contacts() {
                       </Badge>
                     </td>
                     <td className="p-4 text-right space-x-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setContactToEdit(contact)
-                          setContactModalOpen(true)
-                        }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
-                        onClick={(e) => handleDelete(contact.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setContactToEdit(contact)
+                              setContactModalOpen(true)
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
+                            onClick={(e) => handleDelete(contact.id, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))

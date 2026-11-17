@@ -4,6 +4,7 @@ import { getContacts } from '@/services/contacts'
 import { getDeals } from '@/services/deals'
 import { getMovimentosReceita, consolidarPorCompetencia } from '@/services/movimentos_receita'
 import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/hooks/use-auth'
 import { Contrato, Contact, Deal, MovimentoReceita } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
 export default function Contratos() {
+  const { isAdmin } = useAuth()
   const [contratos, setContratos] = useState<Contrato[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
@@ -273,27 +275,31 @@ export default function Contratos() {
               >
                 <Wrench className="h-4 w-4" />
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-slate-500 hover:text-teal-700 hover:bg-teal-50"
-                onClick={(e) => {
-                  setContratoToEdit(c)
-                  setModalOpen(true)
-                }}
-                aria-label={`Editar contrato de ${c.expand?.cliente?.name || 'cliente'}`}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
-                onClick={(e) => handleDelete(c.id, e)}
-                aria-label={`Excluir contrato de ${c.expand?.cliente?.name || 'cliente'}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isAdmin && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-slate-500 hover:text-teal-700 hover:bg-teal-50"
+                    onClick={(e) => {
+                      setContratoToEdit(c)
+                      setModalOpen(true)
+                    }}
+                    aria-label={`Editar contrato de ${c.expand?.cliente?.name || 'cliente'}`}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                    onClick={(e) => handleDelete(c.id, e)}
+                    aria-label={`Excluir contrato de ${c.expand?.cliente?.name || 'cliente'}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         ))}

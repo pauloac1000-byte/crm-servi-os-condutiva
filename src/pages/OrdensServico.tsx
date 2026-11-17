@@ -4,6 +4,7 @@ import { getOrdensServico, deleteOrdemServico } from '@/services/ordens_servico'
 import { getContacts } from '@/services/contacts'
 import { getContratos } from '@/services/contratos'
 import { getUsers } from '@/services/users'
+import { useAuth } from '@/hooks/use-auth'
 import { OrdemServico, Contact, Contrato, User } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +32,7 @@ import {
 import { toast } from 'sonner'
 
 export default function OrdensServico() {
+  const { isAdmin } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [ordens, setOrdens] = useState<OrdemServico[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -292,27 +294,31 @@ export default function OrdensServico() {
               </span>
             </div>
             <div className="flex items-center justify-end gap-1 pt-1 border-t border-slate-100">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-slate-500 hover:text-teal-700 hover:bg-teal-50"
-                onClick={() => {
-                  setOsToEdit(os)
-                  setModalOpen(true)
-                }}
-                aria-label={`Editar OS de ${os.expand?.cliente?.name || 'cliente'}`}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
-                onClick={() => handleDelete(os.id)}
-                aria-label={`Excluir OS de ${os.expand?.cliente?.name || 'cliente'}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isAdmin && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-slate-500 hover:text-teal-700 hover:bg-teal-50"
+                    onClick={() => {
+                      setOsToEdit(os)
+                      setModalOpen(true)
+                    }}
+                    aria-label={`Editar OS de ${os.expand?.cliente?.name || 'cliente'}`}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                    onClick={() => handleDelete(os.id)}
+                    aria-label={`Excluir OS de ${os.expand?.cliente?.name || 'cliente'}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         ))}

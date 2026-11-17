@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getActivities, toggleActivityStatus, deleteActivity } from '@/services/activities'
+import { useAuth } from '@/hooks/use-auth'
 import { getContacts } from '@/services/contacts'
 import { getDeals } from '@/services/deals'
 import { Activity, Contact, Deal } from '@/types/crm'
@@ -21,6 +22,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
 export default function Activities() {
+  const { isAdmin } = useAuth()
   const [activities, setActivities] = useState<Activity[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
@@ -150,25 +152,29 @@ export default function Activities() {
             </div>
 
             <div className="flex items-center gap-1 self-end sm:self-center">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
-                onClick={() => {
-                  setActivityToEdit(act)
-                  setActivityModalOpen(true)
-                }}
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
-                onClick={() => handleDelete(act.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {isAdmin && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
+                    onClick={() => {
+                      setActivityToEdit(act)
+                      setActivityModalOpen(true)
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
+                    onClick={() => handleDelete(act.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         ))}

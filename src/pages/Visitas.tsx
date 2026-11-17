@@ -316,25 +316,29 @@ export default function Visitas() {
                 <span className="text-base font-black text-teal-700">
                   {formatCurrency(v.custo_total || 0)}
                 </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
-                  onClick={() => {
-                    setVisitaToEdit(v)
-                    setModalOpen(true)
-                  }}
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
-                  onClick={() => handleDelete(v.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {isAdmin && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
+                      onClick={() => {
+                        setVisitaToEdit(v)
+                        setModalOpen(true)
+                      }}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
+                      onClick={() => handleDelete(v.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           ))}

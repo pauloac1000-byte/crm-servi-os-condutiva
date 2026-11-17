@@ -4,6 +4,7 @@ import { getDeals, deleteDeal } from '@/services/deals'
 import { getPipelineStages } from '@/services/pipeline_stages'
 import { getContacts } from '@/services/contacts'
 import { Deal, EtapaFunil, Contact, DealStatus } from '@/types/crm'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,6 +23,7 @@ import { toast } from 'sonner'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 export default function Deals() {
+  const { isAdmin } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [deals, setDeals] = useState<Deal[]>([])
   const [stages, setStages] = useState<EtapaFunil[]>([])
@@ -224,26 +226,30 @@ export default function Deals() {
                         : 'N/A'}
                     </td>
                     <td className="p-4 text-right space-x-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setDealToEdit(deal)
-                          setDealModalOpen(true)
-                        }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
-                        onClick={(e) => handleDelete(deal.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-teal-700"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDealToEdit(deal)
+                              setDealModalOpen(true)
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600"
+                            onClick={(e) => handleDelete(deal.id, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))
