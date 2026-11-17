@@ -27,7 +27,10 @@ onRecordUpdate((e) => {
 
   const etapaAntes = original.getString('etapa')
   const etapaDepois = record.getString('etapa')
-  if (!etapaAntes || !etapaDepois || etapaAntes === etapaDepois) return
+  if (!etapaAntes || !etapaDepois || etapaAntes === etapaDepois) {
+    e.next()
+    return
+  }
 
   // Status perdido: recuar/definir etapa_anterior não é "avanço"
   const status = record.getString('status')
@@ -116,4 +119,6 @@ onRecordUpdate((e) => {
   if (!eAvanco) {
     record.set('justificativa_avanco', '')
   }
+
+  e.next()
 }, 'deals')

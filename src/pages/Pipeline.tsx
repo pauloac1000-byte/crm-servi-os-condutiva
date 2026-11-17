@@ -47,6 +47,9 @@ export default function Pipeline() {
       setStages(s)
       setDeals(d)
       setContacts(c)
+      // Mantém o drawer do negócio em sincronia com o banco (ex.: caixas do
+      // critério de saída recém-gravadas aparecem ao reabrir sem recarregar).
+      setSelectedDeal((prev) => (prev ? (d.find((x) => x.id === prev.id) ?? null) : null))
     } catch {
       /* intentionally ignored */
     }
