@@ -1,44 +1,102 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   Identidade Condutiva — tokens de cor e tipografia
+   ============================================================ */
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* Cores da marca (task: padronização de identidade) */
+    --condutiva-texto: #1a1d1f; /* texto principal */
+    --condutiva-superficie: #ffffff; /* superfícies (cards) */
+    --condutiva-fundo: #f6f7f5; /* fundo de página */
+    --condutiva-linha: #e3e6e3; /* linhas/bordas */
+    --condutiva-cinza: #6b7280; /* cinza de apoio */
+    --condutiva-alerta: #c77d0a; /* alerta (âmbar do semáforo) */
+    --condutiva-risco: #c0392b; /* risco (vermelho do semáforo) */
+    --condutiva-lime: #a8d93a; /* verde lime do logotipo — único destaque */
+    --condutiva-lime-texto: #628f14; /* lime escurecido p/ texto legível sobre branco */
+    --condutiva-lime-suave: #f3fae3; /* tint de lime p/ fundos suaves */
+    --condutiva-lime-borda: #cbe89b;
+
+    /* Tipografia */
+    --font-titulo: 'Archivo', 'Inter', system-ui, sans-serif;
+    --font-texto: 'Inter', system-ui, sans-serif;
+    --font-numero: 'IBM Plex Mono', ui-monospace, monospace;
+
+    /* Tokens shadcn remapeados para a identidade */
+    --background: 90 11% 96%;
+    --foreground: 204 9% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 204 9% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 204 9% 11%;
 
-    --primary: 84 68% 42%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary: 79 67% 54%;
+    --primary-foreground: 204 9% 11%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 90 9% 95%;
+    --secondary-foreground: 204 9% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 90 9% 95%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 84 50% 94%;
-    --accent-foreground: 84 75% 25%;
+    --accent: 79 67% 92%;
+    --accent-foreground: 79 75% 25%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 6 63% 46%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 84 68% 42%;
+    --border: 120 6% 89%;
+    --input: 120 6% 89%;
+    --ring: 79 67% 54%;
 
     --radius: 0.75rem;
   }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-texto);
+    color: var(--condutiva-texto);
+    background-color: var(--condutiva-fundo);
+  }
+
+  /* Títulos e rótulos em Archivo */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  th,
+  label,
+  dt {
+    font-family: var(--font-titulo);
+  }
 }
 
+/* Classe utilitária para números (KPI, tabela, gráfico):
+   IBM Plex Mono + dígitos de mesma largura */
 @layer utilities {
+  .mono-nums {
+    font-family: var(--font-numero);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Número mono alinhado à direita (colunas de tabela, valores) */
+  .numero-mono {
+    font-family: var(--font-numero);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
   @keyframes fade-in-up {
     from {
       transform: translateY(12px);
@@ -52,5 +110,192 @@
 
   .animate-fade-in-up {
     animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+/* ============================================================
+   Varredura de cores — todas as telas passam a usar os tokens.
+   Ajusta APENAS cores (classes utilitárias); estrutura, posição
+   e conteúdo dos blocos permanecem intactos.
+   ============================================================ */
+@layer utilities {
+  /* Texto principal e de apoio */
+  .text-slate-900 {
+    color: var(--condutiva-texto);
+  }
+  .text-slate-800 {
+    color: #26292c;
+  }
+  .text-slate-700 {
+    color: #3a3e42;
+  }
+  .text-slate-600 {
+    color: #4b5563;
+  }
+  .text-slate-500 {
+    color: var(--condutiva-cinza);
+  }
+  .text-slate-400 {
+    color: #9ca3af;
+  }
+  .text-slate-300 {
+    color: #c6ccc6;
+  }
+
+  /* Fundos e linhas */
+  .bg-slate-950 {
+    background-color: #14171a;
+  }
+  .bg-slate-900 {
+    background-color: var(--condutiva-texto);
+  }
+  .bg-slate-100 {
+    background-color: #eef1ee;
+  }
+  .bg-slate-50 {
+    background-color: var(--condutiva-fundo);
+  }
+  .border-slate-200 {
+    border-color: var(--condutiva-linha);
+  }
+  .border-slate-100 {
+    border-color: var(--condutiva-linha);
+  }
+  .border-slate-800 {
+    border-color: #2e3237;
+  }
+
+  /* Destaque único: verde lime (antes teal) */
+  .bg-teal-700 {
+    background-color: var(--condutiva-lime);
+  }
+  .bg-teal-800 {
+    background-color: #97c634;
+  }
+  .bg-teal-600 {
+    background-color: var(--condutiva-lime);
+  }
+  .bg-teal-100 {
+    background-color: #e4f4c7;
+  }
+  .bg-teal-50 {
+    background-color: var(--condutiva-lime-suave);
+  }
+  .text-teal-900 {
+    color: #4c7313;
+  }
+  .text-teal-800 {
+    color: #4c7313;
+  }
+  .text-teal-700 {
+    color: var(--condutiva-lime-texto);
+  }
+  .text-teal-600 {
+    color: var(--condutiva-lime-texto);
+  }
+  .text-teal-500 {
+    color: var(--condutiva-lime-texto);
+  }
+  .border-teal-700 {
+    border-color: var(--condutiva-lime-texto);
+  }
+  .border-teal-200 {
+    border-color: var(--condutiva-lime-borda);
+  }
+
+  /* Botão lime com texto branco herdado → texto escuro (contraste) */
+  .bg-teal-700.text-white,
+  .bg-teal-800.text-white,
+  .bg-teal-600.text-white {
+    color: #14171a;
+  }
+
+  /* Verde de "no prazo / atingido" (antes emerald) = lime da marca */
+  .bg-emerald-50 {
+    background-color: var(--condutiva-lime-suave);
+  }
+  .bg-emerald-100 {
+    background-color: #e4f4c7;
+  }
+  .text-emerald-500 {
+    color: var(--condutiva-lime-texto);
+  }
+  .text-emerald-600 {
+    color: var(--condutiva-lime-texto);
+  }
+  .text-emerald-700 {
+    color: var(--condutiva-lime-texto);
+  }
+  .text-emerald-800 {
+    color: #4c7313;
+  }
+  .border-emerald-200 {
+    border-color: var(--condutiva-lime-borda);
+  }
+
+  /* Alerta — âmbar do semáforo */
+  .bg-amber-50 {
+    background-color: #fbf3e4;
+  }
+  .bg-amber-100 {
+    background-color: #f6e7c8;
+  }
+  .text-amber-500 {
+    color: var(--condutiva-alerta);
+  }
+  .text-amber-600 {
+    color: var(--condutiva-alerta);
+  }
+  .text-amber-700 {
+    color: var(--condutiva-alerta);
+  }
+  .text-amber-800 {
+    color: #9a6208;
+  }
+  .border-amber-200 {
+    border-color: #eed9b0;
+  }
+
+  /* Risco — vermelho do semáforo */
+  .bg-rose-50 {
+    background-color: #faecea;
+  }
+  .bg-rose-100 {
+    background-color: #f2d8d4;
+  }
+  .text-rose-500 {
+    color: var(--condutiva-risco);
+  }
+  .text-rose-600 {
+    color: var(--condutiva-risco);
+  }
+  .text-rose-700 {
+    color: var(--condutiva-risco);
+  }
+  .border-rose-200 {
+    border-color: #ebc5c0;
+  }
+  .bg-red-50 {
+    background-color: #faecea;
+  }
+  .text-red-500 {
+    color: var(--condutiva-risco);
+  }
+  .text-red-600 {
+    color: var(--condutiva-risco);
+  }
+  .text-red-700 {
+    color: var(--condutiva-risco);
+  }
+
+  /* Categorias neutras (prospect) — sem segundo tom de destaque */
+  .bg-indigo-50 {
+    background-color: #eef1ee;
+  }
+  .text-indigo-700 {
+    color: #4b5563;
+  }
+  .border-indigo-200 {
+    border-color: var(--condutiva-linha);
   }
 }
