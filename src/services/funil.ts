@@ -65,6 +65,10 @@ export interface FunilPeriodo {
 export interface FunilEntrada {
   dataDe?: string
   dataAte?: string
+  // id do responsável comercial (filtro global do Dashboard): filtra por
+  // historico_negocios.owner (gravado pelo hook com o owner do negócio);
+  // undefined/'' = todos
+  responsavel?: string
 }
 
 // ---------- helpers ----------
@@ -91,6 +95,7 @@ const percentual = (dividendo: number, divisor: number) =>
 export async function calcularFunil(entrada: FunilEntrada = {}): Promise<FunilPeriodo> {
   const de = entrada.dataDe || ''
   const ate = entrada.dataAte || ''
+  const resp = entrada.responsavel || ''
 
   const [etapasFunil, historico, todosDeals] = await Promise.all([
     pb.collection('etapas_funil').getFullList<EtapaFunil>({ sort: 'ordem' }),
@@ -111,6 +116,7 @@ export async function calcularFunil(entrada: FunilEntrada = {}): Promise<FunilPe
   const atingiram = new Map<number, Set<string>>()
   etapasFunil.forEach((e) => atingiram.set(e.ordem, new Set<string>()))
   for (const h of historico) {
+    if (resp && h.owner !== resp) continue
     if (!dentroDoPeriodo(h.created, de, ate)) continue
     const ordem = h.etapa_para ? ordemPorId.get(h.etapa_para) : undefined
     if (ordem == null) continue
@@ -123,6 +129,7 @@ export async function calcularFunil(entrada: FunilEntrada = {}): Promise<FunilPe
   const linhaDoTempo = new Map<string, { ordem: number; created: string }[]>()
   const entradasEtapa = historico.filter((h) => h.tipo === 'entrada_etapa')
   for (const h of entradasEtapa) {
+    if (resp && h.owner !== resp) continue
     const ordem = h.etapa_para ? ordemPorId.get(h.etapa_para) : undefined
     if (ordem == null) continue
     const lista = linhaDoTempo.get(h.deal) || []
@@ -146,6 +153,7 @@ export async function calcularFunil(entrada: FunilEntrada = {}): Promise<FunilPe
   // --- perdas: negócios com status perdido, contados pela última etapa ---
   const perdasPorOrdem = new Map<number, number>()
   for (const d of dealsPerdidos) {
+    if (resp && d.owner !== resp) continue
     if (!dentroDoPeriodo(d.updated, de, ate)) continue
     const ordem = d.etapa_anterior ? ordemPorId.get(d.etapa_anterior) : undefined
     if (ordem == null) continue

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMetasAcompanhamento } from '@/hooks/use-metas-acompanhamento'
+import type { MetasEntrada } from '@/services/metas-acompanhamento'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -26,7 +27,10 @@ import { Target } from 'lucide-react'
 // - Números do ano: acumulado realizado, meta acumulada do mês, diferença,
 //   percentual do ano realizado e quanto falta por mês até dezembro.
 // Toda a conta vem do motor src/services/metas-acompanhamento.ts (via
-// useMetasAcompanhamento); aqui só há formatação e desenho.
+// useMetasAcompanhamento); aqui só há formatação e desenho. O período e o
+// responsável vêm do FILTRO GLOBAL do Dashboard (estado elevado em Index.tsx):
+// a janela recorta o realizado dentro do ano; a meta e o acumulado continuam
+// do ano inteiro (metas não têm responsável).
 
 const MESES_PT = [
   'Jan',
@@ -49,9 +53,8 @@ const rotuloMes = (comp: string) => {
   return MESES_PT[m - 1]
 }
 
-export function MetasBloco() {
-  const ano = new Date().getFullYear()
-  const { dados, loading, erro } = useMetasAcompanhamento({ ano })
+export function MetasBloco({ entrada }: { entrada: MetasEntrada }) {
+  const { dados, loading, erro } = useMetasAcompanhamento(entrada)
 
   // linha do realizado no gráfico: null quebra a linha (sem dado = sem ponto)
   const serieGrafico = (dados?.mensal ?? []).map((m) => ({
@@ -65,7 +68,6 @@ export function MetasBloco() {
         <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Target className="h-4 w-4 text-teal-700" />
           Metas
-          <span className="text-xs font-normal text-slate-400">Ano {ano}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 pt-4">

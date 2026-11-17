@@ -61,7 +61,15 @@ export interface MetasAcompanhamento {
 }
 
 export interface MetasEntrada {
+  // ano do acompanhamento (coleção metas)
   ano: number
+  // janela de recorte do realizado dentro do ano (filtro global do Dashboard):
+  // AAAA-MM-DD; ausentes = o ano inteiro
+  dataDe?: string
+  dataAte?: string
+  // id do responsável comercial (filtro global do Dashboard): contratos →
+  // contratos.responsavel. undefined/'' = todos
+  responsavel?: string
 }
 
 // ---------- helpers ----------
@@ -93,6 +101,11 @@ export async function calcularMetasAcompanhamento(
   entrada: MetasEntrada,
 ): Promise<MetasAcompanhamento> {
   const ano = entrada.ano
+  const resp = entrada.responsavel || ''
+  // janela do realizado dentro do ano (filtro global do Dashboard): padrão =
+  // ano inteiro; com dataDe/dataAte, recorta o realizado a essas datas
+  const de = entrada.dataDe || `${ano}-01-01`
+  const ate = entrada.dataAte || `${ano}-12-31`
 
   const [contratos, metas] = await Promise.all([
     pb.collection('contratos').getFullList<Contrato>({}),
@@ -111,8 +124,11 @@ export async function calcularMetasAcompanhamento(
   const realizadoPorMes = new Map<number, number>()
   let algumContrato = false
   for (const c of contratos) {
+    if (resp && c.responsavel !== resp) continue
     const base = parteData(c.data_inicio) || parteData(c.created)
+    // dentro do ano E dentro da janela do período escolhido
     if (!base || !base.startsWith(`${ano}-`)) continue
+    if (base < de || base > ate) continue
     algumContrato = true
     const mes = Number(base.slice(5, 7))
     realizadoPorMes.set(mes, (realizadoPorMes.get(mes) || 0) + valorContratado(c))

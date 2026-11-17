@@ -49,6 +49,10 @@ export interface MrrNrrPeriodo {
 export interface MrrNrrEntrada {
   dataDe: string // 'YYYY-MM-DD'
   dataAte: string // 'YYYY-MM-DD'
+  // id do responsável comercial (filtro global do Dashboard): filtra os
+  // movimentos (movimentos_receita.responsavel) e os contratos
+  // (contratos.responsavel); undefined/'' = todos
+  responsavel?: string
 }
 
 // ---------- helpers ----------
@@ -82,6 +86,7 @@ const somaPorTipo = (ms: MovimentoReceita[]) => {
 export async function calcularMrrNrr(entrada: MrrNrrEntrada): Promise<MrrNrrPeriodo> {
   const de = entrada.dataDe
   const ate = entrada.dataAte
+  const resp = entrada.responsavel || ''
 
   const [contratos, movimentos] = await Promise.all([
     pb.collection('contratos').getFullList<Contrato>({}),
@@ -98,6 +103,7 @@ export async function calcularMrrNrr(entrada: MrrNrrEntrada): Promise<MrrNrrPeri
   // --- criado antes da janela): vigência por data_inicio/data_fim/status.
   const receitaPorCompetencia = new Map<string, number>()
   for (const m of movimentos) {
+    if (resp && m.responsavel !== resp) continue
     const comp = m.competencia || ''
     if (!comp) continue
     receitaPorCompetencia.set(comp, (receitaPorCompetencia.get(comp) || 0) + (m.valor_mensal || 0))
@@ -106,6 +112,7 @@ export async function calcularMrrNrr(entrada: MrrNrrEntrada): Promise<MrrNrrPeri
   // competências que têm contrato vigente mas nenhum movimento registrado
   const mesesContratados = new Map<string, number>()
   for (const c of contratos) {
+    if (resp && c.responsavel !== resp) continue
     if (c.status === 'suspenso') continue
     const ini = parteData(c.data_inicio) || parteData(c.created)
     if (!ini) continue
@@ -155,10 +162,13 @@ export async function calcularMrrNrr(entrada: MrrNrrEntrada): Promise<MrrNrrPeri
   }
 
   // --- composição do período: movimentos dentro do período ---
-  const movimentosPeriodo = movimentos.filter((m) => {
-    const comp = m.competencia || ''
-    return !!comp && comp >= inicioComp && comp <= fimComp
-  })
+  const movimentosPeriodo = movimentos.filter(
+    (m) =>
+      (!resp || m.responsavel === resp) &&
+      !!m.competencia &&
+      m.competencia >= inicioComp &&
+      m.competencia <= fimComp,
+  )
   const porTipo = somaPorTipo(movimentosPeriodo)
 
   // sem NRR via movimentos, tenta via contratos vigentes (mesma definição:

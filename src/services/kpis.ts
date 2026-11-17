@@ -96,6 +96,10 @@ export interface KpisEntrada {
   dataAte?: string // 'YYYY-MM-DD'
   ano?: number
   mes?: number // 1-12; com ano, define um período de mês único
+  // id do responsável comercial (filtro global do Dashboard): filtra contratos
+  // (contratos.responsavel), OS (responsavel_tecnico) e entradas de etapa
+  // (owner do negócio); undefined/'' = todos
+  responsavel?: string
 }
 
 export const ROTULOS_KPIS: Record<KpiUnidade, string> = {
@@ -134,7 +138,7 @@ const dividir = (dividendo: number | null, divisor: number) =>
 
 // ---------- base de dados do período ----------
 
-interface BaseKpis {
+type BaseKpis = {
   rcs: number | null
   clientesComContrato: number
   receitaServicos: number | null
@@ -145,7 +149,7 @@ interface BaseKpis {
   nrr: number | null
 }
 
-const carregarBase = async (de: string, ate: string): Promise<BaseKpis> => {
+const carregarBase = async (de: string, ate: string, responsavel?: string): Promise<BaseKpis> => {
   const [contratos, movimentos, ordens, etapas, entradas] = await Promise.all([
     pb.collection('contratos').getFullList<Contrato>({}),
     pb.collection('movimentos_receita').getFullList<MovimentoReceita>({
@@ -163,8 +167,19 @@ const carregarBase = async (de: string, ate: string): Promise<BaseKpis> => {
   const ordemEtapas = new Map<string, number>()
   etapas.forEach((e) => ordemEtapas.set(e.id, e.ordem))
 
+  // --- filtro por responsável comercial (filtro global do Dashboard) ---
+  // Mesma noção de responsável em todos os blocos: contratos →
+  // contratos.responsavel; OS → ordens_servico.responsavel_tecnico; histórico
+  // (entradas de etapa → negócios) → historico_negocios.owner (gravado pelo
+  // hook com o owner do negócio na criação/avanço).
+  const resp = responsavel || ''
+  const contratoDoResp = (c: Contrato) => !resp || c.responsavel === resp
+  const osDoResp = (o: OrdemServico) => !resp || o.responsavel_tecnico === resp
+  const historicoDoResp = (h: HistoricoNegocio) => !resp || h.owner === resp
+
   // --- RCS e ticket médio: contratos assinados no período ---
   const assinados = contratos.filter((c) => {
+    if (!contratoDoResp(c)) return false
     const base = parteData(c.data_inicio) || parteData(c.created)
     return !!base && base >= de && base <= ate
   })
@@ -199,6 +214,7 @@ const carregarBase = async (de: string, ate: string): Promise<BaseKpis> => {
   const qualificados = new Set<string>()
   const propostas = new Set<string>()
   for (const e of entradas) {
+    if (!historicoDoResp(e)) continue
     const data = parteData(e.created)
     if (!data || data < de || data > ate) continue
     const ordem = e.etapa_para ? ordemEtapas.get(e.etapa_para) : undefined
@@ -209,6 +225,7 @@ const carregarBase = async (de: string, ate: string): Promise<BaseKpis> => {
 
   // --- OS no prazo: concluídas no período ---
   const concluidas = ordens.filter((o) => {
+    if (!osDoResp(o)) return false
     if (o.status !== 'concluída') return false
     const base = parteData(o.data_encerramento) || parteData(o.data_abertura)
     return !!base && base >= de && base <= ate
@@ -223,6 +240,7 @@ const carregarBase = async (de: string, ate: string): Promise<BaseKpis> => {
   let nrr: number | null = null
   const receitaPorCompetencia = new Map<string, number>()
   for (const m of movimentos) {
+    if (resp && m.responsavel !== resp) continue
     const comp = m.competencia || ''
     if (!comp) continue
     receitaPorCompetencia.set(comp, (receitaPorCompetencia.get(comp) || 0) + (m.valor_mensal || 0))
@@ -333,7 +351,10 @@ export async function calcularKpis(entrada: KpisEntrada = {}): Promise<KpisPerio
     mes = de.slice(0, 7) === ate.slice(0, 7) ? Number(de.slice(5, 7)) : undefined
   }
 
-  const [base, metas] = await Promise.all([carregarBase(de, ate), buscarMetas(ano)])
+  const [base, metas] = await Promise.all([
+    carregarBase(de, ate, entrada.responsavel),
+    buscarMetas(ano),
+  ])
 
   const conversao =
     base.qtdQualificados !== null && base.qtdQualificados > 0

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCustoAquisicao } from '@/hooks/use-custo-aquisicao'
-import type { PeriodoFaixa } from '@/components/KpisFaixa'
+import type { CustoAquisicaoEntrada } from '@/services/custo-aquisicao'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -18,9 +18,10 @@ import { formatarMoeda, formatarNumero, formatarIndicadorMoeda } from '@/service
 // Quatro números do período + gráfico de 12 meses (gasto mensal em visitas em
 // barras, contratos assinados em linha) + retorno por real investido.
 // Toda a conta vem do motor src/services/custo-aquisicao.ts (via
-// useCustoAquisicao); aqui só há formatação e desenho. O período é o mesmo
-// seletor da faixa de KPIs (estado elevado em Index.tsx).
+// useCustoAquisicao); aqui só há formatação e desenho. O período e o
+// responsável vêm do FILTRO GLOBAL do Dashboard (estado elevado em Index.tsx).
 
+// rótulo curto "Mmm/AA" para o eixo do gráfico
 const MESES_PT = [
   'Jan',
   'Fev',
@@ -35,8 +36,6 @@ const MESES_PT = [
   'Nov',
   'Dez',
 ]
-
-// rótulo curto "Mmm/AA" para o eixo do gráfico
 const rotuloMes = (comp: string) => {
   const m = Number(comp.slice(5, 7))
   const a = Number(comp.slice(0, 4))
@@ -45,30 +44,17 @@ const rotuloMes = (comp: string) => {
 }
 
 interface Props {
-  periodo: PeriodoFaixa
+  entrada: CustoAquisicaoEntrada
 }
 
-export function CustoAquisicao({ periodo }: Props) {
-  const ano = periodo.ano
-  const mes = periodo.mes
-  const prefixoMes = `${ano}-${String(mes).padStart(2, '0')}`
-  const dataDe = mes ? `${prefixoMes}-01` : `${ano}-01-01`
-  const dataAte = mes
-    ? `${prefixoMes}-${String(new Date(ano, mes, 0).getDate()).padStart(2, '0')}`
-    : `${ano}-12-31`
-
-  const { dados, loading, erro } = useCustoAquisicao({ dataDe, dataAte })
+export function CustoAquisicao({ entrada }: Props) {
+  const { dados, loading, erro } = useCustoAquisicao(entrada)
 
   if (loading) {
     return (
       <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
-            <span>Custo de Aquisição</span>
-            <span className="text-xs font-normal text-slate-400">
-              {mes ? `${MESES_PT[mes - 1]}/${ano}` : `Ano ${ano}`}
-            </span>
-          </CardTitle>
+          <CardTitle className="text-base font-bold text-slate-900">Custo de Aquisição</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="py-8 text-center text-sm text-slate-400">Calculando…</div>
@@ -80,12 +66,7 @@ export function CustoAquisicao({ periodo }: Props) {
   return (
     <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
-          <span>Custo de Aquisição</span>
-          <span className="text-xs font-normal text-slate-400">
-            {mes ? `${MESES_PT[mes - 1]}/${ano}` : `Ano ${ano}`}
-          </span>
-        </CardTitle>
+        <CardTitle className="text-base font-bold text-slate-900">Custo de Aquisição</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 pt-4">
         {erro && (

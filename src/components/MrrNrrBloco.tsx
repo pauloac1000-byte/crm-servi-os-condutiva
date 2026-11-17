@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMrrNrr } from '@/hooks/use-mrr-nrr'
-import type { PeriodoFaixa } from '@/components/KpisFaixa'
+import type { MrrNrrEntrada } from '@/services/mrr-nrr'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -26,8 +26,8 @@ import type { KpiSituacao } from '@/services/kpis'
 // receita inicial → novos → expansão → contração → churn → receita final.
 // Toda a conta vem do motor src/services/mrr-nrr.ts (via useMrrNrr); a regra de
 // situação do NRR é a mesma exportada pelo motor kpis.ts. Aqui só há
-// formatação e desenho. O período é o mesmo seletor da faixa de KPIs
-// (estado elevado em Index.tsx).
+// formatação e desenho. O período e o responsável vêm do FILTRO GLOBAL do
+// Dashboard (estado elevado em Index.tsx).
 
 const MESES_PT = [
   'Jan',
@@ -72,19 +72,11 @@ const leituraNrr = (nrr: number | null, situacao: KpiSituacao): string | null =>
 }
 
 interface Props {
-  periodo: PeriodoFaixa
+  entrada: MrrNrrEntrada
 }
 
-export function MrrNrrBloco({ periodo }: Props) {
-  const ano = periodo.ano
-  const mes = periodo.mes
-  const prefixoMes = `${ano}-${String(mes).padStart(2, '0')}`
-  const dataDe = mes ? `${prefixoMes}-01` : `${ano}-01-01`
-  const dataAte = mes
-    ? `${prefixoMes}-${String(new Date(ano, mes, 0).getDate()).padStart(2, '0')}`
-    : `${ano}-12-31`
-
-  const { dados, loading, erro } = useMrrNrr({ dataDe, dataAte })
+export function MrrNrrBloco({ entrada }: Props) {
+  const { dados, loading, erro } = useMrrNrr(entrada)
 
   const leitura = leituraNrr(dados?.nrr ?? null, dados?.situacaoNrr ?? null)
 
@@ -108,9 +100,6 @@ export function MrrNrrBloco({ periodo }: Props) {
         <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
           <Repeat className="h-4 w-4 text-teal-700" />
           Receita recorrente
-          <span className="text-xs font-normal text-slate-400">
-            {mes ? `${MESES_PT[mes - 1]}/${ano}` : `Ano ${ano}`}
-          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 pt-4">

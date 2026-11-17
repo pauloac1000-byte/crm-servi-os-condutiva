@@ -1,28 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useFunil } from '@/hooks/use-funil'
-import type { FunilEtapaResultado, FunilPeriodo } from '@/services/funil'
-import type { PeriodoFaixa } from '@/components/KpisFaixa'
+import type { FunilEntrada, FunilEtapaResultado, FunilPeriodo } from '@/services/funil'
 import { AlertTriangle } from 'lucide-react'
 
 // Bloco do Dashboard: funil de 7 etapas com taxa de conversão.
 // Toda a conta vem do motor src/services/funil.ts (via useFunil) — nada é
-// recalculado aqui; o componente só formata e desenha. O período é o mesmo
-// seletor da faixa de KPIs (estado elevado em Index.tsx).
-
-const MESES_PT = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro',
-]
+// recalculado aqui; o componente só formata e desenha. O período e o
+// responsável vêm do FILTRO GLOBAL do Dashboard (estado elevado em Index.tsx).
 
 const fmtMoeda = (v: number) =>
   new Intl.NumberFormat('pt-BR', {
@@ -43,16 +27,8 @@ const larguraBarra = (etapa: FunilEtapaResultado, maximo: number) =>
 const semMovimentacao = (dados: FunilPeriodo) =>
   dados.etapas.every((e) => e.negocios === 0) && dados.conversaoTotal === null
 
-export function FunilVendas({ periodo }: { periodo: PeriodoFaixa }) {
-  const ano = periodo.ano
-  const mes = periodo.mes
-  const prefixoMes = `${ano}-${String(mes).padStart(2, '0')}`
-  const dataDe = mes ? `${prefixoMes}-01` : `${ano}-01-01`
-  const dataAte = mes
-    ? `${prefixoMes}-${String(new Date(ano, mes, 0).getDate()).padStart(2, '0')}`
-    : `${ano}-12-31`
-
-  const { dados, loading, erro } = useFunil({ dataDe, dataAte })
+export function FunilVendas({ entrada }: { entrada: FunilEntrada }) {
+  const { dados, loading, erro } = useFunil(entrada)
 
   const maximo = dados ? Math.max(...dados.etapas.map((e) => e.negocios), 1) : 1
   const vazio = !loading && !erro && (!dados || semMovimentacao(dados))
@@ -62,9 +38,6 @@ export function FunilVendas({ periodo }: { periodo: PeriodoFaixa }) {
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
           <span>Funil de Vendas por Etapa</span>
-          <span className="text-xs font-normal text-slate-400">
-            {mes ? `${MESES_PT[mes - 1]}/${ano}` : `Ano ${ano}`}
-          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">

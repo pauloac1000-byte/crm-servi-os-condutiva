@@ -57,6 +57,10 @@ export interface CustoAquisicaoPeriodo {
 export interface CustoAquisicaoEntrada {
   dataDe: string // 'YYYY-MM-DD'
   dataAte: string // 'YYYY-MM-DD'
+  // id do responsável comercial (filtro global do Dashboard): visitas →
+  // visitas_comerciais.responsavel; histórico → owner; contratos →
+  // contratos.responsavel. undefined/'' = todos
+  responsavel?: string
 }
 
 // ---------- helpers ----------
@@ -74,6 +78,12 @@ export async function calcularCustoAquisicao(
 ): Promise<CustoAquisicaoPeriodo> {
   const de = entrada.dataDe
   const ate = entrada.dataAte
+  const resp = entrada.responsavel || ''
+  // filtro por responsável comercial (filtro global do Dashboard) — mesma
+  // noção de responsável dos demais blocos
+  const visitaDoResp = (v: VisitaComercial) => !resp || v.responsavel === resp
+  const contratoDoResp = (c: Contrato) => !resp || c.responsavel === resp
+  const historicoDoResp = (h: HistoricoNegocio) => !resp || h.owner === resp
 
   // 12 meses do gráfico: de 11 meses antes do mês do período até o mês de fim
   const anoFim = Number(ate.slice(0, 4))
@@ -100,6 +110,7 @@ export async function calcularCustoAquisicao(
 
   // --- custo total de prospecção do período ---
   const visitasPeriodo = visitas.filter((v) => {
+    if (!visitaDoResp(v)) return false
     const data = parteData(v.data || v.created)
     return !!data && data >= de && data <= ate
   })
@@ -111,6 +122,7 @@ export async function calcularCustoAquisicao(
   const qualificados = new Set<string>()
   const propostas = new Set<string>()
   for (const e of entradas) {
+    if (!historicoDoResp(e)) continue
     const data = parteData(e.created)
     if (!data || data < de || data > ate) continue
     const ordem = e.etapa_para ? ordemEtapas.get(e.etapa_para) : undefined
@@ -123,6 +135,7 @@ export async function calcularCustoAquisicao(
 
   // --- contratos assinados no período (mesma regra do motor kpis.ts) ---
   const assinados = contratos.filter((c) => {
+    if (!contratoDoResp(c)) return false
     const base = parteData(c.data_inicio) || parteData(c.created)
     return !!base && base >= de && base <= ate
   })
@@ -166,6 +179,7 @@ export async function calcularCustoAquisicao(
   // --- série mensal dos últimos 12 meses ---
   const gastoPorCompetencia = new Map<string, number>()
   for (const v of visitas) {
+    if (!visitaDoResp(v)) continue
     const data = parteData(v.data || v.created)
     if (!data) continue
     const comp = data.slice(0, 7)
@@ -176,6 +190,7 @@ export async function calcularCustoAquisicao(
   // contratos do gráfico: janela completa dos 12 meses (não só o período)
   const contratosPorMes = new Map<string, number>()
   for (const c of contratos) {
+    if (!contratoDoResp(c)) continue
     const base = parteData(c.data_inicio) || parteData(c.created)
     if (!base) continue
     const comp = base.slice(0, 7)
