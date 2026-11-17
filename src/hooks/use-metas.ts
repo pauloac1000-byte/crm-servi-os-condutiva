@@ -38,6 +38,17 @@ export const MESES_CURTOS = [
 
 const CHAVE_UNICA = (ano: number, kpi: MetaKpi, mes: number) => `${ano}|${kpi}|${mes}`
 
+// registro existente de ano+mês+kpi no servidor (mes 0 = anual); undefined se não há
+const buscarMeta = async (ano: number, kpi: MetaKpi, mes: number): Promise<Meta | undefined> => {
+  try {
+    return await pb
+      .collection('metas')
+      .getFirstListItem<Meta>(`ano = ${ano} && kpi = '${kpi}' && mes = ${mes > 0 ? mes : 0}`)
+  } catch {
+    return undefined
+  }
+}
+
 export function useMetas() {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -80,18 +91,33 @@ export function useMetas() {
     [getMeta],
   )
 
+  // mantém a lista local em dia com o que foi gravado (null = registro removido)
+  const aplicarLocal = useCallback(
+    (kpi: MetaKpi, mes: number, registro: Meta | null) => {
+      setMetas((prev) => {
+        const resto = prev.filter((m) => !(m.ano === ano && m.kpi === kpi && (m.mes || 0) === mes))
+        return registro ? [...resto, registro] : resto
+      })
+    },
+    [ano],
+  )
+
   // grava a célula (cria ou atualiza o registro do ano+mês+kpi)
   const salvarValor = useCallback(
     async (kpi: MetaKpi, mes: number, valor: number | undefined) => {
-      const existente = getMeta(kpi, mes)
       try {
+        // consulta o servidor (não a lista em memória, que pode estar defasada)
+        const existente = await buscarMeta(ano, kpi, mes)
         if (valor === undefined) {
           if (!existente) return
           await pb.collection('metas').delete(existente.id)
+          aplicarLocal(kpi, mes, null)
         } else if (existente) {
-          await updateMeta(existente.id, { valor_meta: valor })
+          const atualizado = await updateMeta(existente.id, { valor_meta: valor })
+          aplicarLocal(kpi, mes, atualizado)
         } else {
-          await createMeta({ ano, kpi, mes: mes > 0 ? mes : 0, valor_meta: valor })
+          const criado = await createMeta({ ano, kpi, mes: mes > 0 ? mes : 0, valor_meta: valor })
+          aplicarLocal(kpi, mes, criado)
         }
       } catch (erro: any) {
         const msg =
@@ -102,7 +128,7 @@ export function useMetas() {
         throw erro
       }
     },
-    [getMeta, ano],
+    [ano, aplicarLocal],
   )
 
   return { ano, setAno, getValor, salvarValor, isAdmin, loading }

@@ -25,6 +25,7 @@ export default function Metas() {
   const [rascunho, setRascunho] = useState('')
 
   const anos = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i)
+  const editarCelula = (kpi: MetaKpi, mes: number) => `${kpi}|${mes}`
 
   const formatarValor = (kpi: MetaKpi, valor: number | undefined) => {
     if (valor === undefined) return '—'
@@ -45,11 +46,15 @@ export default function Metas() {
     setRascunho(valor === undefined ? '' : String(valor).replace('.', ','))
   }
 
+  // fecha a edição só se ela ainda for a mesma célula (outra pode ter sido aberta enquanto salvava)
+  const fecharSe = (chave: string) => setEditando((atual) => (atual === chave ? null : atual))
+
   const confirmarEdicao = async (kpi: MetaKpi, mes: number) => {
+    const chave = editarCelula(kpi, mes)
     const texto = rascunho.trim().replace(/\./g, '').replace(',', '.')
     // campos vazios limpam a meta; entrada inválida avisa e mantém a edição
     if (texto === '') {
-      setEditando(null)
+      fecharSe(chave)
       try {
         await salvarValor(kpi, mes, undefined)
       } catch {
@@ -64,7 +69,7 @@ export default function Metas() {
     }
     try {
       await salvarValor(kpi, mes, valor)
-      setEditando(null)
+      fecharSe(chave)
     } catch {
       /* toast já exibido; célula continua em edição */
     }
@@ -94,7 +99,6 @@ export default function Metas() {
   }
 
   const algumEditando = editando !== null
-  const editarCelula = (kpi: MetaKpi, mes: number) => `${kpi}|${mes}`
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -182,7 +186,7 @@ export default function Metas() {
                     ) : (
                       <button
                         type="button"
-                        disabled={!isAdmin || algumEditando}
+                        disabled={!isAdmin}
                         onClick={() => iniciarEdicao(kpi, 0)}
                         className={`w-20 h-8 rounded-lg text-xs font-bold transition-colors ${
                           getValor(kpi, 0) !== undefined
@@ -217,7 +221,7 @@ export default function Metas() {
                         ) : (
                           <button
                             type="button"
-                            disabled={!isAdmin || algumEditando}
+                            disabled={!isAdmin}
                             onClick={() => iniciarEdicao(kpi, mes)}
                             className={`w-20 h-8 rounded-lg text-xs font-semibold transition-colors ${
                               getValor(kpi, mes) !== undefined
