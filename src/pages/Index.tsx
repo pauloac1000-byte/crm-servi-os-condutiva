@@ -28,6 +28,7 @@ import { CustoAquisicao } from '@/components/CustoAquisicao'
 import { MetasBloco } from '@/components/MetasBloco'
 import { MrrNrrBloco } from '@/components/MrrNrrBloco'
 import { PrecisaAcao } from '@/components/PrecisaAcao'
+import { LeituraPeriodo } from '@/components/LeituraPeriodo'
 import { DashboardFiltrosBar } from '@/components/DashboardFiltrosBar'
 import {
   SelecaoFiltros,
@@ -170,6 +171,15 @@ export default function Index() {
 
       {/* filtros globais: período + responsável comercial */}
       <DashboardFiltrosBar selecao={selecao} responsaveis={responsaveis} onChange={mudarSelecao} />
+
+      {/* leitura automática do período: primeira coisa da página, acima dos KPIs */}
+      <LeituraPeriodo
+        entrada={{
+          dataDe: periodoAtual.dataDe,
+          dataAte: periodoAtual.dataAte,
+          responsavel: selecao.responsavel,
+        }}
+      />
 
       <KpisFaixa
         entrada={{
