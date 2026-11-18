@@ -15,7 +15,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Trash2, Edit2, Download } from 'lucide-react'
+import {
+  ColumnFilter,
+  COLUNAS_FILTRAVEIS,
+  getValoresColuna,
+  type ColunaFiltravelId,
+  type FiltroColuna,
+} from '@/components/ColumnFilter'
+import { Search, Plus, Trash2, Edit2, Download, X } from 'lucide-react'
 import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
 import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
@@ -35,6 +42,9 @@ export default function Deals() {
   const [dealModalOpen, setDealModalOpen] = useState(false)
   const [dealToEdit, setDealToEdit] = useState<Deal | null>(null)
   const [selectedDealDetail, setSelectedDealDetail] = useState<Deal | null>(null)
+  const [filtrosColuna, setFiltrosColuna] = useState<FiltroColuna[]>(
+    COLUNAS_FILTRAVEIS.map((c) => ({ id: c.id, valores: [] })),
+  )
 
   const loadData = async () => {
     try {
@@ -78,6 +88,26 @@ export default function Deals() {
     }
   }
 
+  // Filtro por coluna (seleção múltipla): coluna sem seleção = sem filtro
+  const valorColuna = (deal: Deal, id: ColunaFiltravelId): string => {
+    switch (id) {
+      case 'titulo':
+        return deal.title
+      case 'contato':
+        return deal.expand?.contact?.name || 'N/A'
+      case 'etapa':
+        return deal.expand?.etapa?.nome || deal.expand?.stage?.name || ''
+      case 'prioridade':
+        return deal.priority
+      case 'previsao':
+        return deal.expected_close_date
+          ? new Date(deal.expected_close_date).toLocaleDateString('pt-BR')
+          : 'N/A'
+      default:
+        return ''
+    }
+  }
+
   const filteredDeals = deals.filter((deal) => {
     const matchesSearch =
       deal.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -85,10 +115,27 @@ export default function Deals() {
     const matchesStage = stageFilter === 'all' || deal.etapa === stageFilter
     const matchesPriority = priorityFilter === 'all' || deal.priority === priorityFilter
 
-    return matchesSearch && matchesStage && matchesPriority
+    const matchesColunas = filtrosColuna.every((f) => {
+      if (f.valores.length === 0) return true
+      return f.valores.includes(valorColuna(deal, f.id))
+    })
+
+    return matchesSearch && matchesStage && matchesPriority && matchesColunas
   })
   // Ordem inicial: título de A a Z (sem acentos e maiúsculas)
   filteredDeals.sort((a, b) => compararTexto(a.title, b.title))
+
+  const limparFiltros = () => {
+    setSearch('')
+    setStageFilter('all')
+    setPriorityFilter('all')
+    setFiltrosColuna((atual) => atual.map((f) => ({ ...f, valores: [] })))
+  }
+  const temFiltroAtivo =
+    search !== '' ||
+    stageFilter !== 'all' ||
+    priorityFilter !== 'all' ||
+    filtrosColuna.some((f) => f.valores.length > 0)
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -187,16 +234,44 @@ export default function Deals() {
         </div>
       </div>
 
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-slate-500">
+          Exibindo <span className="font-bold text-slate-900">{filteredDeals.length}</span> de{' '}
+          {deals.length} {deals.length === 1 ? 'lead' : 'leads'}
+        </p>
+        {temFiltroAtivo && (
+          <Button
+            variant="outline"
+            onClick={limparFiltros}
+            className="font-semibold text-xs h-9 text-slate-600 hover:text-teal-700"
+          >
+            <X className="mr-1.5 h-4 w-4" /> Limpar filtros
+          </Button>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               <tr>
-                <th className="p-4">Título</th>
-                <th className="p-4">Contato</th>
-                <th className="p-4">Etapa</th>
-                <th className="p-4">Prioridade</th>
-                <th className="p-4">Previsão</th>
+                {COLUNAS_FILTRAVEIS.map((col) => (
+                  <th key={col.id} className="p-4">
+                    <div className="flex items-center gap-1.5">
+                      <span>{col.rotulo}</span>
+                      <ColumnFilter
+                        coluna={col.rotulo}
+                        valores={getValoresColuna(deals, valorColuna, col.id)}
+                        selecionados={filtrosColuna.find((f) => f.id === col.id)?.valores ?? []}
+                        onChange={(valores) =>
+                          setFiltrosColuna((atual) =>
+                            atual.map((f) => (f.id === col.id ? { ...f, valores } : f)),
+                          )
+                        }
+                      />
+                    </div>
+                  </th>
+                ))}
                 <th className="p-4 text-right">Ações</th>
               </tr>
             </thead>
