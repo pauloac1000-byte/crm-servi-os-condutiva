@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T17:18:30.749Z",
+  "generatedAt": "2026-11-18T17:49:56.088Z",
   "collections": [
     {
       "name": "users",
@@ -29,21 +29,29 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "role",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["admin", "user"]
+          "selectValues": [
+            "admin",
+            "user"
+          ]
         }
       ],
       "indexes": [
@@ -85,17 +93,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_pipeline_stages_order ON pipeline_stages (`order`)"]
+      "indexes": [
+        "CREATE INDEX idx_pipeline_stages_order ON pipeline_stages (`order`)"
+      ]
     },
     {
       "name": "contacts",
@@ -143,7 +158,12 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["lead", "prospect", "cliente", "inativo"]
+          "selectValues": [
+            "lead",
+            "prospect",
+            "cliente",
+            "inativo"
+          ]
         },
         {
           "name": "notes",
@@ -163,14 +183,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "cidade",
@@ -239,7 +264,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["baixa", "média", "alta"]
+          "selectValues": [
+            "baixa",
+            "média",
+            "alta"
+          ]
         },
         {
           "name": "notes",
@@ -252,21 +281,30 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "status",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["em andamento", "ganho", "perdido"]
+          "selectValues": [
+            "em andamento",
+            "ganho",
+            "perdido"
+          ]
         },
         {
           "name": "etapa",
@@ -385,14 +423,22 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["ligação", "e-mail", "reunião", "follow-up"]
+          "selectValues": [
+            "ligação",
+            "e-mail",
+            "reunião",
+            "follow-up"
+          ]
         },
         {
           "name": "status",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["pendente", "concluída"]
+          "selectValues": [
+            "pendente",
+            "concluída"
+          ]
         },
         {
           "name": "description",
@@ -432,14 +478,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -505,14 +556,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "criterio_itens",
@@ -521,7 +577,9 @@
           "system": false
         }
       ],
-      "indexes": ["CREATE INDEX idx_etapas_funil_ordem ON etapas_funil (ordem)"]
+      "indexes": [
+        "CREATE INDEX idx_etapas_funil_ordem ON etapas_funil (ordem)"
+      ]
     },
     {
       "name": "historico_negocios",
@@ -585,14 +643,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "tipo",
@@ -658,7 +721,10 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["presencial", "remota"]
+          "selectValues": [
+            "presencial",
+            "remota"
+          ]
         },
         {
           "name": "km_rodados",
@@ -719,14 +785,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "empresa",
@@ -771,14 +842,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": []
@@ -823,17 +899,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_planos_nome ON planos (nome)"]
+      "indexes": [
+        "CREATE INDEX idx_planos_nome ON planos (nome)"
+      ]
     },
     {
       "name": "contratos",
@@ -897,28 +980,43 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["ativo", "encerrado", "suspenso"]
+          "selectValues": [
+            "ativo",
+            "encerrado",
+            "suspenso"
+          ]
         },
         {
           "name": "tipo",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["novo", "renovação", "expansão", "contração", "churn"]
+          "selectValues": [
+            "novo",
+            "renovação",
+            "expansão",
+            "contração",
+            "churn"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "informacoes_plano",
@@ -964,7 +1062,13 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["novo", "expansão", "contração", "churn", "renovação"]
+          "selectValues": [
+            "novo",
+            "expansão",
+            "contração",
+            "churn",
+            "renovação"
+          ]
         },
         {
           "name": "valor_mensal",
@@ -984,14 +1088,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -1061,7 +1170,12 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": ["aberta", "em execução", "concluída", "cancelada"]
+          "selectValues": [
+            "aberta",
+            "em execução",
+            "concluída",
+            "cancelada"
+          ]
         },
         {
           "name": "responsavel_tecnico",
@@ -1081,14 +1195,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         },
         {
           "name": "empresa",
@@ -1161,17 +1280,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_metas_ano_mes_kpi ON metas (ano, mes, kpi)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_metas_ano_mes_kpi ON metas (ano, mes, kpi)"
+      ]
     }
   ]
 }
