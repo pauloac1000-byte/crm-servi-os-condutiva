@@ -25,6 +25,12 @@
 // PocketBase) não passa por aqui (e.auth vazio) e continua com poder total.
 // ATENÇÃO (JSVM): callbacks não enxergam declarações de topo de arquivo —
 // toda a lógica vive inline dentro de cada callback.
+//
+// Nos deletes, o registro ORIGINAL não é apagado manualmente: a cascata apaga
+// só os DEPENDENTES e o caminho termina com e.next() — é o e.next() que executa
+// o delete do próprio registro e devolve a resposta correta. Sem e.next() o
+// PocketBase PULA o delete e responde 200 (bug 0.0.22/0.0.23: registro que
+// continuava existindo, usuário que não era excluído).
 
 onRecordDeleteRequest(
   (e) => {
@@ -43,6 +49,9 @@ onRecordDeleteRequest(
     }
 
     // --- exclusão em cascata para não falhar com dependências obrigatórias ---
+    // apagarNegocio(id, true) apaga TAMBÉM o próprio negócio (usado na cascata
+    // de contato); apagarNegocio(id, false) apaga só os dependentes — o negócio
+    // ORIGINAL do request fica para o e.next() apagar, no fim do callback.
     var colecoesDependentesDeDeal = [
       { nome: 'activities', campo: 'deal' },
       { nome: 'visitas_comerciais', campo: 'negocio' },
@@ -73,7 +82,7 @@ onRecordDeleteRequest(
       e.app.delete(e.app.findRecordById('contratos', contratoId))
     }
 
-    var apagarNegocio = function (dealId) {
+    var apagarNegocio = function (dealId, apagarOProprio) {
       for (var c = 0; c < colecoesDependentesDeDeal.length; c++) {
         var dep = colecoesDependentesDeDeal[c]
         var registros = e.app.findRecordsByFilter(dep.nome, dep.campo + " = '" + dealId + "'")
@@ -85,7 +94,9 @@ onRecordDeleteRequest(
       for (var k = 0; k < contratos.length; k++) {
         apagarContrato(contratos[k].getString('id'))
       }
-      e.app.delete(e.app.findRecordById('deals', dealId))
+      if (apagarOProprio) {
+        e.app.delete(e.app.findRecordById('deals', dealId))
+      }
     }
 
     var apagarContato = function (contatoId) {
@@ -106,12 +117,12 @@ onRecordDeleteRequest(
         apagarContrato(contratosDoContato[ct].getString('id'))
       }
       // Negócios do contato: usa a mesma rotina do negócio (atividades, visitas,
-      // histórico, contratos + movimentos + OS) para não deixar órfãos.
+      // histórico, contratos + movimentos + OS, e o próprio negócio) para não
+      // deixar órfãos. O CONTATO original do request fica para o e.next().
       var negocios = e.app.findRecordsByFilter('deals', "contact = '" + contatoId + "'")
       for (var k = 0; k < negocios.length; k++) {
-        apagarNegocio(negocios[k].getString('id'))
+        apagarNegocio(negocios[k].getString('id'), true)
       }
-      e.app.delete(e.app.findRecordById('contacts', contatoId))
     }
 
     var desvincularUsuario = function (userId) {
@@ -138,15 +149,15 @@ onRecordDeleteRequest(
     }
 
     if (e.collection.name === 'deals') {
-      apagarNegocio(e.record.id)
+      apagarNegocio(e.record.id, false)
     } else if (e.collection.name === 'contacts') {
       apagarContato(e.record.id)
     } else if (e.collection.name === 'users') {
       desvincularUsuario(e.record.id)
     }
-    // Depois da exclusão em cascata o registro original já não existe — o
-    // request de delete termina aqui, sem e.next() (apagar de novo um registro
-    // já removido devolveria 404 e estragaria a resposta).
+    // Único caminho de sucesso: chama e.next() — é ele que executa o delete do
+    // próprio registro (negócio/contato/usuário) e devolve a resposta correta.
+    e.next()
   },
   'deals',
   'contacts',
@@ -165,9 +176,9 @@ onRecordDeleteRequest((e) => {
   for (var m = 0; m < movimentos.length; m++) {
     e.app.delete(movimentos[m])
   }
-  // Depois da exclusão em cascata o registro original já não existe — o
-  // request de delete termina aqui, sem e.next() (mesmo padrão dos blocos
-  // acima: apagar de novo devolveria 404 e estragaria a resposta).
+  // Único caminho de sucesso: chama e.next() — é ele que executa o delete do
+  // próprio contrato e devolve a resposta correta.
+  e.next()
 }, 'contratos')
 
 // metas: apenas o admin grava (regra que já existia; barreira no servidor).
