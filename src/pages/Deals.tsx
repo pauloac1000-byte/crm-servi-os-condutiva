@@ -15,7 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Trash2, Edit2, Eye, Filter } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, Download } from 'lucide-react'
+import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
 import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -105,6 +106,47 @@ export default function Deals() {
           className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
+        </Button>
+        <Button
+          onClick={() =>
+            baixarCsv(
+              nomeArquivoCsv('negocios'),
+              montarCsv(
+                [
+                  'Título',
+                  'Empresa',
+                  'Cidade',
+                  'Estado',
+                  'Contato',
+                  'Etapa',
+                  'Prioridade',
+                  'Valor total (R$)',
+                  'Previsão de fechamento',
+                  'Responsável',
+                  'Criado em',
+                ],
+                filteredDeals.map((deal) =>
+                  linhaCsv([
+                    { valor: deal.title },
+                    { valor: deal.empresa },
+                    { valor: deal.cidade },
+                    { valor: deal.estado },
+                    { valor: deal.expand?.contact?.name },
+                    { valor: deal.expand?.etapa?.nome || deal.expand?.stage?.name },
+                    { valor: deal.priority },
+                    { valor: valorOportunidade(deal), tipo: { moeda: true } },
+                    { valor: deal.expected_close_date, tipo: { data: true } },
+                    { valor: deal.expand?.owner?.name || deal.expand?.owner?.email },
+                    { valor: deal.created, tipo: { dataHora: true } },
+                  ]),
+                ),
+              ),
+            )
+          }
+          variant="outline"
+          className="font-semibold text-xs h-10"
+        >
+          <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
         </Button>
       </div>
 

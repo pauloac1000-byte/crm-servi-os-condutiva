@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, Plus, Trash2, Edit2, Wrench } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, Wrench, Download } from 'lucide-react'
+import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
 import { OrdemServicoModal } from '@/components/OrdemServicoModal'
 import { useRealtime } from '@/hooks/use-realtime'
 import {
@@ -151,6 +152,56 @@ export default function OrdensServico() {
           className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
         >
           <Plus className="mr-1.5 h-4 w-4" /> Nova OS
+        </Button>
+        <Button
+          onClick={() =>
+            baixarCsv(
+              nomeArquivoCsv('ordens-servico'),
+              montarCsv(
+                [
+                  'Cliente',
+                  'Empresa',
+                  'Equipamento',
+                  'Descrição',
+                  'Status',
+                  'Situação de prazo',
+                  'Abertura',
+                  'Prazo acordado',
+                  'Encerramento',
+                  'Responsável técnico',
+                  'Observações',
+                ],
+                filtered.map((os) =>
+                  linhaCsv([
+                    { valor: os.expand?.cliente?.name },
+                    { valor: os.empresa },
+                    { valor: os.equipamento },
+                    { valor: os.descricao },
+                    { valor: os.status },
+                    {
+                      valor: (() => {
+                        const s = situacaoPrazoOS(os)
+                        return s ? situacaoPrazoRotulo[s] : ''
+                      })(),
+                    },
+                    { valor: os.data_abertura, tipo: { dataHora: true } },
+                    { valor: os.prazo_acordado, tipo: { dataHora: true } },
+                    { valor: os.data_encerramento, tipo: { dataHora: true } },
+                    {
+                      valor:
+                        os.expand?.responsavel_tecnico?.name ||
+                        os.expand?.responsavel_tecnico?.email,
+                    },
+                    { valor: os.observacoes },
+                  ]),
+                ),
+              ),
+            )
+          }
+          variant="outline"
+          className="font-semibold text-xs h-10"
+        >
+          <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
         </Button>
       </div>
 

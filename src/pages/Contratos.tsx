@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, Plus, Trash2, Edit2, FileText, TrendingUp, Wrench } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, FileText, TrendingUp, Wrench, Download } from 'lucide-react'
+import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
 import { ContratoModal } from '@/components/ContratoModal'
 import { MovimentoReceitaModal } from '@/components/MovimentoReceitaModal'
 import { ContratoOsDrawer } from '@/components/ContratoOsDrawer'
@@ -152,6 +153,45 @@ export default function Contratos() {
             className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
           >
             <Plus className="mr-1.5 h-4 w-4" /> Novo Contrato
+          </Button>
+          <Button
+            onClick={() =>
+              baixarCsv(
+                nomeArquivoCsv('contratos'),
+                montarCsv(
+                  [
+                    'Cliente',
+                    'Lead de origem',
+                    'Plano',
+                    'Tipo',
+                    'Status',
+                    'Valor mensal (R$)',
+                    'Data de início',
+                    'Data de fim',
+                    'Responsável',
+                    'Observações',
+                  ],
+                  filtered.map((c) =>
+                    linhaCsv([
+                      { valor: c.expand?.cliente?.name },
+                      { valor: c.expand?.negocio?.title },
+                      { valor: c.expand?.plano?.nome },
+                      { valor: c.tipo },
+                      { valor: c.status },
+                      { valor: c.valor_mensal, tipo: { moeda: true } },
+                      { valor: c.data_inicio, tipo: { data: true } },
+                      { valor: c.data_fim, tipo: { data: true } },
+                      { valor: c.expand?.responsavel?.name || c.expand?.responsavel?.email },
+                      { valor: c.informacoes_plano },
+                    ]),
+                  ),
+                ),
+              )
+            }
+            variant="outline"
+            className="font-semibold text-xs h-10"
+          >
+            <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
           </Button>
         </div>
       </div>

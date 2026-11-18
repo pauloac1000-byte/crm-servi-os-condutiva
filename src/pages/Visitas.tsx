@@ -15,7 +15,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, Car, Trash2, Edit2, MapPin, Clock, Briefcase, Settings } from 'lucide-react'
+import {
+  Plus,
+  Car,
+  Trash2,
+  Edit2,
+  MapPin,
+  Clock,
+  Briefcase,
+  Settings,
+  Download,
+} from 'lucide-react'
+import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
 import { VisitasModal } from '@/components/VisitasModal'
 import { ConfiguracoesModal } from '@/components/ConfiguracoesModal'
 import { getConfiguracoes } from '@/services/configuracoes'
@@ -148,6 +159,53 @@ export default function Visitas() {
             className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
           >
             <Plus className="mr-1.5 h-4 w-4" /> Nova Visita
+          </Button>
+          <Button
+            onClick={() =>
+              baixarCsv(
+                nomeArquivoCsv('visitas'),
+                montarCsv(
+                  [
+                    'Data',
+                    'Empresa',
+                    'Contato',
+                    'Tipo',
+                    'Responsável',
+                    'KM rodados',
+                    'Horas dedicadas',
+                    'Combustível (R$)',
+                    'Pedágio (R$)',
+                    'Alimentação (R$)',
+                    'Hospedagem (R$)',
+                    'Outros custos (R$)',
+                    'Custo total (R$)',
+                    'Resultado',
+                  ],
+                  visitasFiltradas.map((v) =>
+                    linhaCsv([
+                      { valor: v.data, tipo: { dataHora: true } },
+                      { valor: v.empresa || v.expand?.contato?.name },
+                      { valor: v.expand?.contato?.name },
+                      { valor: v.tipo },
+                      { valor: v.expand?.responsavel?.name || v.expand?.responsavel?.email },
+                      { valor: v.km_rodados },
+                      { valor: v.horas_dedicadas },
+                      { valor: v.valor_combustivel, tipo: { moeda: true } },
+                      { valor: v.pedagio, tipo: { moeda: true } },
+                      { valor: v.alimentacao, tipo: { moeda: true } },
+                      { valor: v.hospedagem, tipo: { moeda: true } },
+                      { valor: v.outros_custos, tipo: { moeda: true } },
+                      { valor: v.custo_total, tipo: { moeda: true } },
+                      { valor: v.resultado },
+                    ]),
+                  ),
+                ),
+              )
+            }
+            variant="outline"
+            className="font-semibold text-xs h-10"
+          >
+            <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
           </Button>
         </div>
       </div>
