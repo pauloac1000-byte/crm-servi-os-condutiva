@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   ShieldCheck,
+  Wrench,
   User as UserIcon,
   Search,
   UserPlus,
@@ -349,10 +350,15 @@ export default function UsersPage() {
                             <ShieldCheck className="h-3.5 w-3.5 text-[#84bd22]" />
                             Administrador
                           </span>
+                        ) : u.perfil === 'tecnico' ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-700 px-2.5 py-1 text-xs font-semibold">
+                            <Wrench className="h-3.5 w-3.5 text-slate-400" />
+                            Técnico
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 text-slate-700 px-2.5 py-1 text-xs font-semibold">
                             <UserIcon className="h-3.5 w-3.5 text-slate-400" />
-                            Usuário
+                            Comercial
                           </span>
                         )}
                       </td>

@@ -1,17 +1,19 @@
 import pb from '@/lib/pocketbase/client'
-import { User, UserRole } from '@/types/crm'
+import { User, UserRole, Perfil } from '@/types/crm'
 
 export interface CreateUserData {
   name: string
   email: string
   password: string
   role?: UserRole
+  perfil?: Perfil
 }
 
 export interface UpdateUserData {
   name?: string
   email?: string
   role?: UserRole
+  perfil?: Perfil
   password?: string
 }
 
@@ -34,6 +36,7 @@ export async function createUser(data: CreateUserData): Promise<User> {
     password: data.password,
     passwordConfirm: data.password,
     role: data.role || 'user',
+    perfil: data.perfil || 'comercial',
   })
   return record as unknown as User
 }
@@ -44,6 +47,7 @@ export async function updateUser(id: string, data: UpdateUserData): Promise<User
   if (typeof data.name !== 'undefined') payload.name = data.name
   if (typeof data.email !== 'undefined') payload.email = data.email
   if (typeof data.role !== 'undefined') payload.role = data.role
+  if (typeof data.perfil !== 'undefined') payload.perfil = data.perfil
   if (data.password && data.password.trim().length > 0) {
     payload.password = data.password
     payload.passwordConfirm = data.password
