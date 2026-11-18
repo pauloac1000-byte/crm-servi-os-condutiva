@@ -232,6 +232,7 @@ export function ContratoModal({
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
   const valorTotalCalc = toNum(valores.valor_mensal) * 12
+  // fallback de resumo quando o prazo ainda não foi informado (12 meses padrão)
   const prazoMeses =
     valores.data_inicio && valores.data_fim
       ? Math.max(

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T15:54:50.133Z",
+  "generatedAt": "2026-11-18T16:08:02.301Z",
   "collections": [
     {
       "name": "users",
@@ -208,12 +208,6 @@
           "system": false
         },
         {
-          "name": "value",
-          "type": "number",
-          "required": false,
-          "system": false
-        },
-        {
           "name": "stage",
           "type": "relation",
           "required": false,
@@ -328,12 +322,6 @@
         },
         {
           "name": "valor_mensal",
-          "type": "number",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "valor_implantacao",
           "type": "number",
           "required": false,
           "system": false
@@ -870,12 +858,6 @@
         },
         {
           "name": "valor_mensal",
-          "type": "number",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "valor_implantacao",
           "type": "number",
           "required": false,
           "system": false

@@ -70,12 +70,10 @@ export interface Plano {
 export interface Deal {
   id: string
   title: string
-  value: number
   // plano de serviço escolhido pelo cliente (coleção planos)
   plano?: string
-  // valores do contrato: valor_total = valor_implantacao + valor_mensal × prazo
+  // valores do contrato: valor_total = valor_mensal × prazo_contrato_meses
   valor_mensal?: number
-  valor_implantacao?: number
   prazo_contrato_meses?: number
   // calculado no servidor pelo hook deals_valor_total.pb.js
   valor_total?: number
@@ -196,7 +194,6 @@ export interface Contrato {
   // observações de texto livre sobre o que foi contratado (escopo, condições)
   informacoes_plano?: string
   valor_mensal?: number
-  valor_implantacao?: number
   data_inicio?: string
   data_fim?: string
   status?: ContratoStatus

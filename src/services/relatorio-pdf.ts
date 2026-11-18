@@ -200,17 +200,16 @@ function secaoFunil(doc: Doc, y0: number, funil: FunilPeriodo): number {
   let y = secao(doc, y0, 'Funil de vendas (7 etapas)')
   autoTableTabela(doc, {
     startY: y,
-    head: [['Etapa', 'Leads', 'Valor', 'Conv. p/ próxima', 'Tempo médio', 'Perdidos', 'Gargalo']],
+    head: [['Etapa', 'Leads', 'Conv. p/ próxima', 'Tempo médio', 'Perdidos', 'Gargalo']],
     body: funil.etapas.map((e) => [
       e.nome,
       String(e.negocios),
-      formatarMoeda(e.valor),
       e.conversaoProxima === null ? '—' : fmtPercentual(e.conversaoProxima),
       e.tempoMedioDias === null ? '—' : `${formatarNumero(e.tempoMedioDias, 1)} dias`,
       e.perdidos > 0 ? String(e.perdidos) : '—',
       e.gargalo ? 'Sim' : '',
     ]),
-    ...estiloTabela({ 1: 'right', 2: 'right', 3: 'right', 4: 'right', 5: 'right', 6: 'center' }),
+    ...estiloTabela({ 1: 'right', 2: 'right', 3: 'right', 4: 'right', 5: 'center' }),
     margin: { left: MARGEM, right: MARGEM },
   })
   y = finalYDe(doc, y)
