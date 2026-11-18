@@ -4,11 +4,18 @@
 // mas nada impede um usuário comum de chamar a API diretamente. Este hook
 // garante que APENAS o admin exclua negócios, contatos e usuários, e que a
 // exclusão do admin NÃO falhe por causa de registros dependentes:
-//   - negócio → apaga atividades, visitas, ordens de serviço, histórico,
-//     contratos (e os movimentos de receita de cada contrato) antes do delete;
-//   - contato → apaga ordens de serviço (cliente obrigatório), visitas e
-//     negócios vinculados (recursivamente, com suas dependências);
+//   - negócio → apaga atividades, visitas, histórico e contratos (cada
+//     contrato com seus movimentos de receita e suas ordens de serviço,
+//     que se vinculam a ele pelo campo "contrato" — ordens_servico NÃO tem
+//     campo "negocio");
+//   - contato → apaga ordens de serviço (cliente obrigatório), visitas,
+//     contratos em que ele é o cliente (campo "cliente", cada um com seus
+//     movimentos e suas OS) e negócios vinculados (recursivamente, com suas
+//     dependências);
 //   - usuário → desvincula (NULL) registros que apontam para ele.
+// Exclusão direta de contrato → apaga os movimentos de receita vinculados
+// (campo "contrato") antes do delete (sem barreira de admin: a permissão de
+// excluir contrato já é regida pelas API rules da coleção).
 // Também reafirma que metas são gravadas apenas pelo admin (regra que já
 // existia em metas_rules.pb.js, absorvida aqui).
 //
@@ -39,7 +46,6 @@ onRecordDeleteRequest(
     var colecoesDependentesDeDeal = [
       { nome: 'activities', campo: 'deal' },
       { nome: 'visitas_comerciais', campo: 'negocio' },
-      { nome: 'ordens_servico', campo: 'negocio' },
       { nome: 'historico_negocios', campo: 'deal' },
     ]
     var colecoesDependentesDeContato = [
@@ -54,6 +60,15 @@ onRecordDeleteRequest(
       )
       for (var m = 0; m < movimentos.length; m++) {
         e.app.delete(movimentos[m])
+      }
+      // As OS se vinculam ao contrato pelo campo "contrato" (não existe
+      // campo "negocio" em ordens_servico).
+      var osDoContrato = e.app.findRecordsByFilter(
+        'ordens_servico',
+        "contrato = '" + contratoId + "'",
+      )
+      for (var o = 0; o < osDoContrato.length; o++) {
+        e.app.delete(osDoContrato[o])
       }
       e.app.delete(e.app.findRecordById('contratos', contratoId))
     }
@@ -81,8 +96,17 @@ onRecordDeleteRequest(
           e.app.delete(registros[i])
         }
       }
+      // Contratos em que o contato é o cliente: cada um com seus movimentos
+      // de receita e suas OS (via apagarContrato).
+      var contratosDoContato = e.app.findRecordsByFilter(
+        'contratos',
+        "cliente = '" + contatoId + "'",
+      )
+      for (var ct = 0; ct < contratosDoContato.length; ct++) {
+        apagarContrato(contratosDoContato[ct].getString('id'))
+      }
       // Negócios do contato: usa a mesma rotina do negócio (atividades, visitas,
-      // OS, histórico, contratos + movimentos) para não deixar órfãos.
+      // histórico, contratos + movimentos + OS) para não deixar órfãos.
       var negocios = e.app.findRecordsByFilter('deals', "contact = '" + contatoId + "'")
       for (var k = 0; k < negocios.length; k++) {
         apagarNegocio(negocios[k].getString('id'))
@@ -128,6 +152,23 @@ onRecordDeleteRequest(
   'contacts',
   'users',
 )
+
+// Contrato: ao excluir, remove antes os movimentos de receita vinculados
+// (campo "contrato") para a exclusão não falhar nem deixar órfãos. Sem
+// barreira de admin: quem pode excluir contrato é definido pelas API rules
+// da coleção (admin ou responsável), replicadas aqui via e.auth.
+onRecordDeleteRequest((e) => {
+  var movimentos = e.app.findRecordsByFilter(
+    'movimentos_receita',
+    "contrato = '" + e.record.id + "'",
+  )
+  for (var m = 0; m < movimentos.length; m++) {
+    e.app.delete(movimentos[m])
+  }
+  // Depois da exclusão em cascata o registro original já não existe — o
+  // request de delete termina aqui, sem e.next() (mesmo padrão dos blocos
+  // acima: apagar de novo devolveria 404 e estragaria a resposta).
+}, 'contratos')
 
 // metas: apenas o admin grava (regra que já existia; barreira no servidor).
 onRecordCreateRequest((e) => {
