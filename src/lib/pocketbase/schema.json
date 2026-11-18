@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T16:08:02.301Z",
+  "generatedAt": "2026-11-18T16:38:21.085Z",
   "collections": [
     {
       "name": "users",
@@ -335,6 +335,24 @@
         {
           "name": "valor_total",
           "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "empresa",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cidade",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "estado",
+          "type": "text",
           "required": false,
           "system": false
         }
