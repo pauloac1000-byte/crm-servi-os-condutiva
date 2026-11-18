@@ -21,7 +21,6 @@ import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
-import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 export default function Deals() {
   const { isAdmin } = useAuth()
@@ -64,9 +63,6 @@ export default function Deals() {
       setSearchParams({}, { replace: true })
     }
   }, [searchParams, deals])
-
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -120,7 +116,6 @@ export default function Deals() {
                   'Contato',
                   'Etapa',
                   'Prioridade',
-                  'Valor total (R$)',
                   'Previsão de fechamento',
                   'Responsável',
                   'Criado em',
@@ -134,7 +129,6 @@ export default function Deals() {
                     { valor: deal.expand?.contact?.name },
                     { valor: deal.expand?.etapa?.nome || deal.expand?.stage?.name },
                     { valor: deal.priority },
-                    { valor: valorOportunidade(deal), tipo: { moeda: true } },
                     { valor: deal.expected_close_date, tipo: { data: true } },
                     { valor: deal.expand?.owner?.name || deal.expand?.owner?.email },
                     { valor: deal.created, tipo: { dataHora: true } },
@@ -199,7 +193,6 @@ export default function Deals() {
                 <th className="p-4">Contato</th>
                 <th className="p-4">Etapa</th>
                 <th className="p-4">Prioridade</th>
-                <th className="p-4">Valor</th>
                 <th className="p-4">Previsão</th>
                 <th className="p-4 text-right">Ações</th>
               </tr>
@@ -207,7 +200,7 @@ export default function Deals() {
             <tbody className="divide-y divide-slate-100">
               {filteredDeals.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400 text-sm">
+                  <td colSpan={6} className="p-8 text-center text-slate-400 text-sm">
                     Nenhum lead encontrado com os filtros atuais.
                   </td>
                 </tr>
@@ -267,9 +260,6 @@ export default function Deals() {
                       >
                         {deal.priority}
                       </Badge>
-                    </td>
-                    <td className="p-4 font-extrabold text-teal-700">
-                      {formatCurrency(valorOportunidade(deal))}
                     </td>
                     <td className="p-4 text-xs text-slate-400">
                       {deal.expected_close_date
