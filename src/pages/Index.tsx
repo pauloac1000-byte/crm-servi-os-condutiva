@@ -40,6 +40,16 @@ import {
 import { useAuth } from '@/hooks/use-auth'
 import { getUsers } from '@/services/users'
 import { User } from '@/types/crm'
+import { FileDown, Loader2 } from 'lucide-react'
+import { gerarRelatorioDashboardPdf, type ResumoCartoes } from '@/services/relatorio-pdf'
+import {
+  calcularPrecisaAcao,
+  tempoMedioPorOrdem,
+  type PrecisaAcaoResultado,
+} from '@/services/precisa-acao'
+import { getOrdensServico } from '@/services/ordens_servico'
+import { OrdemServico, HistoricoNegocio } from '@/types/crm'
+import pb from '@/lib/pocketbase/client'
 
 export default function Index() {
   const [deals, setDeals] = useState<Deal[]>([])
@@ -49,6 +59,58 @@ export default function Index() {
   const [dealModalOpen, setDealModalOpen] = useState(false)
   const [contactModalOpen, setContactModalOpen] = useState(false)
   const { user } = useAuth()
+
+  // EXPORTAR PDF: gera o relatório do Dashboard conforme o filtro global
+  // (período + responsável), com os mesmos motores de cálculo dos blocos.
+  // Somente leitura; qualquer usuário autenticado pode exportar.
+  const [gerandoPdf, setGerandoPdf] = useState(false)
+  const exportarPdf = async () => {
+    if (gerandoPdf) return
+    setGerandoPdf(true)
+    try {
+      // mesmos dados do bloco "Precisa de ação" (regras de precisa-acao.ts)
+      const [dealsP, etapas, ordens, historico] = await Promise.all([
+        getDeals(),
+        pb.collection('etapas_funil').getFullList<EtapaFunil>({ sort: 'ordem' }),
+        getOrdensServico(),
+        pb.collection('historico_negocios').getFullList<HistoricoNegocio>({
+          filter: "tipo = 'entrada_etapa'",
+          sort: 'created',
+        }),
+      ])
+      const precisaAcao = calcularPrecisaAcao(
+        dealsP,
+        etapas,
+        ordens,
+        tempoMedioPorOrdem(historico, etapas),
+      )
+      const resp = responsaveis.find((r) => r.id === selecao.responsavel)
+      const resumo: ResumoCartoes = {
+        receitaFechada: totalWonRevenue,
+        negociosAbertos: openDeals.length,
+        valorPipeline: totalPipelineValue,
+        taxaConversao: conversionRate,
+      }
+      const { nomeArquivo } = await gerarRelatorioDashboardPdf({
+        dataDe: periodoAtual.dataDe,
+        dataAte: periodoAtual.dataAte,
+        ano: periodoAtual.ano,
+        mes: periodoAtual.mes,
+        responsavel: selecao.responsavel,
+        nomeResponsavel: resp ? resp.name : undefined,
+        rotuloPeriodo: rotuloPeriodo(selecao),
+        resumoCartoes: resumo,
+        precisaAcao,
+        atividadesPendentes: pendingActivities,
+      })
+      toast.success(`Relatório gerado: ${nomeArquivo}`)
+    } catch (e) {
+      console.error('Falha ao gerar o PDF do Dashboard', e)
+      toast.error('Não foi possível gerar o relatório em PDF.')
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
 
   // FILTRO GLOBAL do Dashboard (período + responsável): estado elevado aqui e
   // consumido por TODOS os blocos da página. A última seleção persiste em
@@ -151,6 +213,19 @@ export default function Index() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <Button
+            onClick={exportarPdf}
+            disabled={gerandoPdf}
+            variant="outline"
+            className="border-slate-300 text-slate-700 font-semibold text-xs h-10 hover:bg-slate-100"
+          >
+            {gerandoPdf ? (
+              <Loader2 className="mr-1.5 h-4 w-4 text-slate-500 animate-spin" />
+            ) : (
+              <FileDown className="mr-1.5 h-4 w-4 text-slate-500" />
+            )}
+            {gerandoPdf ? 'Gerando…' : 'Exportar PDF'}
+          </Button>
           <Button
             onClick={() => setContactModalOpen(true)}
             variant="outline"
