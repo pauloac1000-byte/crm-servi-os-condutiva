@@ -16,6 +16,7 @@ import { Search, Plus, Trash2, Edit2, Mail, Phone, Building, MapPin } from 'luci
 import { ContactModal } from '@/components/ContactModal'
 import { ContactDetailDrawer } from '@/components/ContactDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
+import { compararTexto } from '@/lib/ordenacao-alfabetica'
 import { toast } from 'sonner'
 
 export default function Contacts() {
@@ -66,6 +67,8 @@ export default function Contacts() {
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter
     return matchesSearch && matchesStatus
   })
+  // Ordem inicial: nome de A a Z (sem acentos e maiúsculas)
+  filteredContacts.sort((a, b) => compararTexto(a.name, b.name))
 
   const statusColors: Record<string, string> = {
     cliente: 'bg-emerald-50 text-emerald-700 border-emerald-200',

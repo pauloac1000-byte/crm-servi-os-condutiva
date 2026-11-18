@@ -32,6 +32,7 @@ import { ConfiguracoesModal } from '@/components/ConfiguracoesModal'
 import { getConfiguracoes } from '@/services/configuracoes'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useEficienciaComercial } from '@/hooks/use-eficiencia-comercial'
+import { compararTexto, tempoData } from '@/lib/ordenacao-alfabetica'
 import { toast } from 'sonner'
 import { TrendingUp } from 'lucide-react'
 
@@ -91,12 +92,24 @@ export default function Visitas() {
   }
 
   const visitasFiltradas = useMemo(() => {
-    return visitas.filter((v) => {
-      if (dataDe && v.data && v.data < `${dataDe} 00:00:00.000Z`) return false
-      if (dataAte && v.data && v.data > `${dataAte} 23:59:59.000Z`) return false
-      if (responsavelFiltro !== 'todos' && v.responsavel !== responsavelFiltro) return false
-      return true
-    })
+    return (
+      visitas
+        .filter((v) => {
+          if (dataDe && v.data && v.data < `${dataDe} 00:00:00.000Z`) return false
+          if (dataAte && v.data && v.data > `${dataAte} 23:59:59.000Z`) return false
+          if (responsavelFiltro !== 'todos' && v.responsavel !== responsavelFiltro) return false
+          return true
+        })
+        // Ordem inicial: lead/empresa de A a Z; dentro do mesmo lead, data mais recente primeiro
+        .sort((a, b) => {
+          const porNome = compararTexto(
+            a.empresa || a.expand?.contato?.name,
+            b.empresa || b.expand?.contato?.name,
+          )
+          if (porNome !== 0) return porNome
+          return tempoData(b.data) - tempoData(a.data)
+        })
+    )
   }, [visitas, dataDe, dataAte, responsavelFiltro])
 
   const custoTotalPeriodo = useMemo(

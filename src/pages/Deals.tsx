@@ -20,6 +20,7 @@ import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-c
 import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
+import { compararTexto } from '@/lib/ordenacao-alfabetica'
 import { toast } from 'sonner'
 
 export default function Deals() {
@@ -86,6 +87,8 @@ export default function Deals() {
 
     return matchesSearch && matchesStage && matchesPriority
   })
+  // Ordem inicial: título de A a Z (sem acentos e maiúsculas)
+  filteredDeals.sort((a, b) => compararTexto(a.title, b.title))
 
   return (
     <div className="space-y-6 animate-fade-in">
