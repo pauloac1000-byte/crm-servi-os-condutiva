@@ -172,7 +172,11 @@ export default function Visitas() {
   }
 
   const filtrosAtivos =
-    !!dataDe || !!dataAte || responsavelFiltro !== 'todos' || leadFiltro !== 'todos' || tipoFiltro !== 'todos'
+    !!dataDe ||
+    !!dataAte ||
+    responsavelFiltro !== 'todos' ||
+    leadFiltro !== 'todos' ||
+    tipoFiltro !== 'todos'
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -494,7 +498,6 @@ export default function Visitas() {
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
->>>>>>>
                     {v.expand?.contato && tituloVisita(v) !== v.expand.contato.name && (
                       <span
                         className="flex items-center gap-1 text-xs"
