@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T18:27:58.300Z",
+  "generatedAt": "2026-11-18T18:43:21.148Z",
   "collections": [
     {
       "name": "users",
@@ -326,18 +326,6 @@
           "required": false,
           "system": false,
           "collectionRef": "planos"
-        },
-        {
-          "name": "valor_mensal",
-          "type": "number",
-          "required": false,
-          "system": false
-        },
-        {
-          "name": "prazo_contrato_meses",
-          "type": "number",
-          "required": false,
-          "system": false
         },
         {
           "name": "valor_total",
