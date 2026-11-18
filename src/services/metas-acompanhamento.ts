@@ -5,9 +5,9 @@ import { Contrato, Meta } from '@/types/crm'
 // contra a meta da coleção "metas" (Skip Cloud, sem dados de exemplo).
 //
 // Definições exatas (mesmas do motor de KPIs, src/services/kpis.ts):
-// - RCS realizado de um mês = soma do valor contratado (valor_implantacao +
-//   valor_mensal × prazo em meses) dos contratos ASSINADOS no mês; "assinado
-//   no mês" = data_inicio dentro dele (fallback: created).
+// - RCS realizado de um mês = soma do valor contratado (valor_mensal × prazo
+//   em meses) dos contratos ASSINADOS no mês; "assinado no mês" = data_inicio
+//   dentro dele (fallback: created).
 // - Acumulado = soma corrida jan → dez do realizado mensal.
 // - Meta mensal = registro da coleção metas (kpi = RCS, mes = 1..12 do ano);
 //   sem meta mensal cadastrada para um mês, usa meta anual ÷ 12 (mesma lógica
@@ -92,8 +92,7 @@ const prazoMeses = (c: Contrato) => {
   return 12
 }
 
-const valorContratado = (c: Contrato) =>
-  (c.valor_implantacao || 0) + (c.valor_mensal || 0) * prazoMeses(c)
+const valorContratado = (c: Contrato) => (c.valor_mensal || 0) * prazoMeses(c)
 
 // ---------- função central ----------
 

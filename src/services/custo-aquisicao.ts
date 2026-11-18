@@ -158,10 +158,7 @@ export async function calcularCustoAquisicao(
     }
     return 12
   }
-  const receitaServicos = assinados.reduce(
-    (s, c) => s + (c.valor_implantacao || 0) + (c.valor_mensal || 0) * prazoMeses(c),
-    0,
-  )
+  const receitaServicos = assinados.reduce((s, c) => s + (c.valor_mensal || 0) * prazoMeses(c), 0)
   const ticketMedio =
     assinados.length > 0 && clientes.size > 0 ? receitaServicos / clientes.size : null
 

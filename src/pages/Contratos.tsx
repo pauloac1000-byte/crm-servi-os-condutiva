@@ -112,7 +112,6 @@ export default function Contratos() {
   const receitaMensal = filtered
     .filter((c) => c.status === 'ativo')
     .reduce((s, c) => s + (c.valor_mensal || 0), 0)
-  const totalImplantacao = filtered.reduce((s, c) => s + (c.valor_implantacao || 0), 0)
 
   const badgeStatus = (status?: string) => {
     switch (status) {
@@ -158,7 +157,7 @@ export default function Contratos() {
       </div>
 
       {/* Cards resumo */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
             <FileText className="h-4 w-4 text-teal-600" /> Contratos no filtro
@@ -170,14 +169,6 @@ export default function Contratos() {
             <FileText className="h-4 w-4 text-emerald-600" /> Receita mensal (ativos)
           </div>
           <p className="text-2xl font-black text-teal-700 mt-2">{formatCurrency(receitaMensal)}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            <FileText className="h-4 w-4 text-amber-600" /> Total em implantação
-          </div>
-          <p className="text-2xl font-black text-amber-600 mt-2">
-            {formatCurrency(totalImplantacao)}
-          </p>
         </div>
       </div>
 
@@ -241,19 +232,11 @@ export default function Contratos() {
                 {c.status || '—'}
               </Badge>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase">Mensal</p>
-                <p className="text-xs font-bold text-slate-800">
-                  {formatCurrency(c.valor_mensal || 0)}
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase">Implantação</p>
-                <p className="text-xs font-bold text-slate-800">
-                  {formatCurrency(c.valor_implantacao || 0)}
-                </p>
-              </div>
+            <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase">Mensal</p>
+              <p className="text-xs font-bold text-slate-800">
+                {formatCurrency(c.valor_mensal || 0)}
+              </p>
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span>

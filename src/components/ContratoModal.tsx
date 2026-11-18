@@ -46,7 +46,6 @@ const VALORES_INICIAIS = {
   responsavelId: '',
   informacoes_plano: '',
   valor_mensal: '',
-  valor_implantacao: '',
   status: 'ativo' as 'ativo' | 'encerrado' | 'suspenso',
   tipo: 'novo' as 'novo' | 'renovação' | 'expansão' | 'contração' | 'churn',
 }
@@ -91,11 +90,6 @@ export function ContratoModal({
           contratoToEdit.valor_mensal !== undefined && contratoToEdit.valor_mensal !== null
             ? String(contratoToEdit.valor_mensal)
             : '',
-        valor_implantacao:
-          contratoToEdit.valor_implantacao !== undefined &&
-          contratoToEdit.valor_implantacao !== null
-            ? String(contratoToEdit.valor_implantacao)
-            : '',
         status: contratoToEdit.status || 'ativo',
         tipo: contratoToEdit.tipo || 'novo',
       })
@@ -116,10 +110,6 @@ export function ContratoModal({
         valor_mensal:
           deal?.valor_mensal !== undefined && deal?.valor_mensal !== null
             ? String(deal.valor_mensal)
-            : '',
-        valor_implantacao:
-          deal?.valor_implantacao !== undefined && deal?.valor_implantacao !== null
-            ? String(deal.valor_implantacao)
             : '',
         status: 'ativo',
         tipo: 'novo',
@@ -184,10 +174,6 @@ export function ContratoModal({
         deal.valor_mensal !== undefined && deal.valor_mensal !== null
           ? String(deal.valor_mensal)
           : v.valor_mensal,
-      valor_implantacao:
-        deal.valor_implantacao !== undefined && deal.valor_implantacao !== null
-          ? String(deal.valor_implantacao)
-          : v.valor_implantacao,
     }))
   }
 
@@ -219,7 +205,6 @@ export function ContratoModal({
         responsavel: valores.responsavelId || undefined,
         informacoes_plano: valores.informacoes_plano || undefined,
         valor_mensal: toNum(valores.valor_mensal),
-        valor_implantacao: toNum(valores.valor_implantacao),
         data_inicio: valores.data_inicio ? `${valores.data_inicio} 00:00:00.000Z` : undefined,
         data_fim: valores.data_fim ? `${valores.data_fim} 00:00:00.000Z` : undefined,
         status: valores.status,
@@ -246,7 +231,7 @@ export function ContratoModal({
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
-  const valorTotalCalc = toNum(valores.valor_implantacao) + toNum(valores.valor_mensal) * 12
+  const valorTotalCalc = toNum(valores.valor_mensal) * 12
   const prazoMeses =
     valores.data_inicio && valores.data_fim
       ? Math.max(
@@ -257,8 +242,7 @@ export function ContratoModal({
           ),
         )
       : 0
-  const valorTotalContrato =
-    toNum(valores.valor_implantacao) + toNum(valores.valor_mensal) * prazoMeses
+  const valorTotalContrato = toNum(valores.valor_mensal) * prazoMeses
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -387,21 +371,7 @@ export function ContratoModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="c_valor_implantacao" className="text-slate-700 font-semibold text-xs">
-                Valor de Implantação (R$)
-              </Label>
-              <Input
-                id="c_valor_implantacao"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0,00"
-                value={valores.valor_implantacao}
-                onChange={(e) => set('valor_implantacao', e.target.value)}
-              />
-            </div>
+          <div>
             <div className="space-y-1.5">
               <Label htmlFor="c_valor_mensal" className="text-slate-700 font-semibold text-xs">
                 Valor Mensal (R$)
@@ -482,12 +452,8 @@ export function ContratoModal({
           </div>
 
           {/* Resumo do valor do contrato a partir dos campos preenchidos */}
-          {(!!toNum(valores.valor_implantacao) || !!toNum(valores.valor_mensal)) && (
+          {!!toNum(valores.valor_mensal) && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>Implantação</span>
-                <span>{formatCurrency(toNum(valores.valor_implantacao))}</span>
-              </div>
               <div className="flex items-center justify-between text-xs text-slate-600">
                 <span>
                   Mensalidade ({prazoMeses || 12} {prazoMeses === 1 ? 'mês' : 'meses'})
@@ -497,6 +463,9 @@ export function ContratoModal({
               <div className="flex items-center justify-between pt-1.5 border-t border-slate-200">
                 <span className="text-xs font-bold text-teal-800 uppercase tracking-wider">
                   Valor total do contrato
+                  <span className="block font-normal normal-case tracking-normal text-[10px] text-slate-500">
+                    valor mensal × prazo
+                  </span>
                 </span>
                 <span className="text-sm font-black text-teal-700">
                   {formatCurrency(prazoMeses ? valorTotalContrato : valorTotalCalc)}

@@ -19,8 +19,8 @@ import {
 // (realizado ÷ meta × 100).
 //
 // Definições exatas:
-// - RCS: soma do valor contratado (valor_implantacao + valor_mensal × prazo em
-//   meses — o mesmo valor total do funil) dos contratos ASSINADOS no período;
+// - RCS: soma do valor contratado (valor_mensal × prazo em meses — o mesmo
+//   valor total do funil) dos contratos ASSINADOS no período;
 //   "assinado no período" = data_inicio dentro dele (fallback: created).
 // - Taxa de conversão de leads: negócios que ATINGIRAM a etapa 5 (Proposta) no
 //   período ÷ negócios que ATINGIRAM a etapa 3 (Qualificado) × 100, via
@@ -198,10 +198,7 @@ const carregarBase = async (de: string, ate: string, responsavel?: string): Prom
     }
     return 12
   }
-  const rcsAssinados = assinados.reduce(
-    (s, c) => s + (c.valor_implantacao || 0) + (c.valor_mensal || 0) * prazoMeses(c),
-    0,
-  )
+  const rcsAssinados = assinados.reduce((s, c) => s + (c.valor_mensal || 0) * prazoMeses(c), 0)
   const clientes = new Set<string>()
   assinados.forEach((c) => {
     if (c.cliente) clientes.add(c.cliente)

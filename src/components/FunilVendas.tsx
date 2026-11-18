@@ -8,13 +8,6 @@ import { AlertTriangle } from 'lucide-react'
 // recalculado aqui; o componente só formata e desenha. O período e o
 // responsável vêm do FILTRO GLOBAL do Dashboard (estado elevado em Index.tsx).
 
-const fmtMoeda = (v: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  }).format(v)
-
 const fmtPercentual = (v: number | null) => (v === null ? '—' : `${Math.round(v)}%`)
 
 const fmtDias = (v: number | null) => (v === null ? '—' : `${Math.round(v)} dias`)
@@ -132,7 +125,6 @@ function FunilLinha({
             </span>
           )}
         </span>
-        <span className="font-bold text-slate-900">{fmtMoeda(etapa.valor)}</span>
       </div>
       <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
         <div

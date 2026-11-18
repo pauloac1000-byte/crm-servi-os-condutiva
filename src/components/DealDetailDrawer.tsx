@@ -176,18 +176,8 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
                   )}
                 </div>
               )}
-              {(deal.valor_mensal !== undefined ||
-                deal.valor_implantacao !== undefined ||
-                deal.prazo_contrato_meses !== undefined) && (
-                <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase">
-                      Implantação
-                    </p>
-                    <p className="text-xs font-bold text-slate-800">
-                      {formatCurrency(deal.valor_implantacao || 0)}
-                    </p>
-                  </div>
+              {(deal.valor_mensal !== undefined || deal.prazo_contrato_meses !== undefined) && (
+                <div className="grid grid-cols-2 gap-2 text-center pt-1">
                   <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
                     <p className="text-[10px] font-semibold text-slate-400 uppercase">Mensal</p>
                     <p className="text-xs font-bold text-slate-800">

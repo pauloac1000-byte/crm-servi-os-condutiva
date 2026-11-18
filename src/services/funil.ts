@@ -1,6 +1,5 @@
 import pb from '@/lib/pocketbase/client'
 import { Deal, EtapaFunil, HistoricoNegocio } from '@/types/crm'
-import { valorOportunidade } from '@/lib/valor-oportunidade'
 
 // Motor do funil de vendas de SERVIÇOS: conta quantos negócios atingiram cada
 // etapa no período, a conversão entre etapas, a conversão total (etapa 7 ÷
@@ -29,8 +28,6 @@ export interface FunilEtapaResultado {
   cor?: string
   // negócios distintos que atingiram a etapa no período (cumulativo)
   negocios: number
-  // soma do valor dos negócios que atingiram a etapa no período (R$)
-  valor: number
   // conversão desta etapa para a seguinte (%); null sem base ou na última etapa
   conversaoProxima: number | null
   // tempo médio de permanência na etapa (dias); null sem estadias concluídas
@@ -161,29 +158,16 @@ export async function calcularFunil(entrada: FunilEntrada = {}): Promise<FunilPe
   }
 
   // --- resultado por etapa ---
-  // mapa id do negócio → deal, para somar o valor por etapa
-  const dealPorId = new Map<string, Deal>()
-  todosDeals.forEach((d) => dealPorId.set(d.id, d))
-
   const etapas: FunilEtapaResultado[] = etapasFunil.map((e, i) => {
     const negocios = atingiram.get(e.ordem)?.size || 0
     const proxima = etapasFunil[i + 1]
     const negociosProxima = proxima ? atingiram.get(proxima.ordem)?.size || 0 : 0
     const duracoes = tempos.get(e.ordem) || []
-    const conjuntoEtapa = atingiram.get(e.ordem)
-    // soma do valor de todos os negócios que atingiram a etapa no período
-    const valorEtapa = conjuntoEtapa
-      ? [...conjuntoEtapa].reduce((s, dealId) => {
-          const deal = dealPorId.get(dealId)
-          return s + (deal ? valorOportunidade(deal) : 0)
-        }, 0)
-      : 0
     return {
       ordem: e.ordem,
       nome: e.nome,
       cor: e.cor,
       negocios,
-      valor: valorEtapa,
       conversaoProxima: proxima && negocios > 0 ? percentual(negociosProxima, negocios) : null,
       tempoMedioDias:
         duracoes.length > 0 ? duracoes.reduce((s, d) => s + d, 0) / duracoes.length : null,

@@ -48,7 +48,6 @@ export function DealModal({
   onSuccess,
 }: DealModalProps) {
   const [title, setTitle] = useState('')
-  const [value, setValue] = useState('')
   const [stageId, setStageId] = useState('')
   const [status, setStatus] = useState<DealStatus>('em andamento')
   const [contactId, setContactId] = useState('')
@@ -57,7 +56,6 @@ export function DealModal({
   const [notes, setNotes] = useState('')
   const [planoId, setPlanoId] = useState('')
   const [valorMensal, setValorMensal] = useState('')
-  const [valorImplantacao, setValorImplantacao] = useState('')
   const [prazoMeses, setPrazoMeses] = useState('')
   const [planos, setPlanos] = useState<Plano[]>([])
   const [loading, setLoading] = useState(false)
@@ -84,13 +82,10 @@ export function DealModal({
     }
   }
 
-  // Valor total do contrato: implantação + mensal × prazo (espelha o hook do servidor)
+  // Valor total do contrato: valor mensal × prazo (espelha o hook do servidor)
   const valorTotalCalc =
-    (valorImplantacao ? Number(valorImplantacao) : 0) +
     (valorMensal ? Number(valorMensal) : 0) * (prazoMeses ? Number(prazoMeses) : 0)
-  const temContrato =
-    (valorImplantacao && Number(valorImplantacao) > 0) ||
-    (valorMensal && Number(valorMensal) > 0 && prazoMeses && Number(prazoMeses) > 0)
+  const temContrato = valorMensal && Number(valorMensal) > 0 && prazoMeses && Number(prazoMeses) > 0
 
   // Etapa de origem do negócio em edição e o estado do bloqueio do critério
   const etapaOrigem = dealToEdit ? stages.find((s) => s.id === dealToEdit.etapa) : undefined
@@ -105,7 +100,6 @@ export function DealModal({
   useEffect(() => {
     if (dealToEdit) {
       setTitle(dealToEdit.title || '')
-      setValue(dealToEdit.value ? String(dealToEdit.value) : '0')
       setStageId(dealToEdit.etapa || stages[0]?.id || '')
       setStatus(dealToEdit.status || 'em andamento')
       setContactId(dealToEdit.contact || '')
@@ -120,11 +114,6 @@ export function DealModal({
           ? String(dealToEdit.valor_mensal)
           : '',
       )
-      setValorImplantacao(
-        dealToEdit.valor_implantacao !== undefined && dealToEdit.valor_implantacao !== null
-          ? String(dealToEdit.valor_implantacao)
-          : '',
-      )
       setPrazoMeses(
         dealToEdit.prazo_contrato_meses !== undefined && dealToEdit.prazo_contrato_meses !== null
           ? String(dealToEdit.prazo_contrato_meses)
@@ -132,7 +121,6 @@ export function DealModal({
       )
     } else {
       setTitle('')
-      setValue('')
       setStageId(defaultStageId || stages[0]?.id || '')
       setStatus('em andamento')
       setContactId(defaultContactId || contacts[0]?.id || '')
@@ -141,7 +129,6 @@ export function DealModal({
       setNotes('')
       setPlanoId('')
       setValorMensal('')
-      setValorImplantacao('')
       setPrazoMeses('')
     }
     setErrors({})
@@ -160,10 +147,8 @@ export function DealModal({
     try {
       const payload: Partial<Deal> = {
         title: title.trim(),
-        value: value ? Number(value) : 0,
         plano: planoId || undefined,
         valor_mensal: valorMensal ? Number(valorMensal) : undefined,
-        valor_implantacao: valorImplantacao ? Number(valorImplantacao) : undefined,
         prazo_contrato_meses: prazoMeses ? Number(prazoMeses) : undefined,
         etapa: stageId,
         status,
@@ -228,21 +213,7 @@ export function DealModal({
             {errors.title && <p className="text-xs text-rose-500">{errors.title}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="value" className="text-slate-700 font-semibold text-xs">
-                Valor (R$)
-              </Label>
-              <Input
-                id="value"
-                type="number"
-                placeholder="0.00"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-              />
-              {errors.value && <p className="text-xs text-rose-500">{errors.value}</p>}
-            </div>
-
+          <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="priority" className="text-slate-700 font-semibold text-xs">
                 Prioridade
@@ -262,7 +233,7 @@ export function DealModal({
 
           {/* Plano de serviço e valores do contrato — valor_total calculado no servidor */}
           <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="plano" className="text-slate-700 font-semibold text-xs">
                   Plano de Serviço
@@ -298,22 +269,6 @@ export function DealModal({
                     </p>
                   )
                 })()}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="valor_implantacao" className="text-slate-700 font-semibold text-xs">
-                  Valor de Implantação (R$)
-                </Label>
-                <Input
-                  id="valor_implantacao"
-                  type="number"
-                  placeholder="0.00"
-                  value={valorImplantacao}
-                  onChange={(e) => setValorImplantacao(e.target.value)}
-                />
-                {errors.valor_implantacao && (
-                  <p className="text-xs text-rose-500">{errors.valor_implantacao}</p>
-                )}
               </div>
             </div>
 
@@ -364,7 +319,7 @@ export function DealModal({
                   currency: 'BRL',
                 }).format(valorTotalCalc)}
                 <span className="block font-normal text-[10px] text-slate-500">
-                  implantação + valor mensal × prazo
+                  valor mensal × prazo
                 </span>
               </p>
             )}
