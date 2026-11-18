@@ -107,10 +107,7 @@ export function ContratoModal({
         clienteId: deal?.contact || contatoDoDeal?.id || '',
         planoId: deal?.plano || '',
         responsavelId: defaultResponsavelId || '',
-        valor_mensal:
-          deal?.valor_mensal !== undefined && deal?.valor_mensal !== null
-            ? String(deal.valor_mensal)
-            : '',
+        valor_mensal: '',
         status: 'ativo',
         tipo: 'novo',
       })
@@ -131,12 +128,16 @@ export function ContratoModal({
       )
     : undefined
 
-  // Cliente exibido quando há negócio de origem: nome da empresa (o nome do
-  // negócio) com o nome do contato junto — somente leitura.
+  // Cliente exibido quando há negócio de origem: nome da empresa (do lead, com
+  // fallback para o contato e o título do negócio) com o contato junto —
+  // somente leitura.
   const rotuloClienteDoNegocio = (() => {
     if (!dealSelecionado || !contatoDoNegocio) return ''
     const empresa =
-      contatoDoNegocio.company || dealSelecionado.expand?.contact?.company || dealSelecionado.title
+      dealSelecionado.empresa ||
+      contatoDoNegocio.company ||
+      dealSelecionado.expand?.contact?.company ||
+      dealSelecionado.title
     return `${empresa} — ${contatoDoNegocio.name}`
   })()
 
@@ -170,10 +171,6 @@ export function ContratoModal({
       negocioId: deal.id,
       clienteId: deal.contact || contato?.id || v.clienteId,
       planoId: deal.plano || v.planoId,
-      valor_mensal:
-        deal.valor_mensal !== undefined && deal.valor_mensal !== null
-          ? String(deal.valor_mensal)
-          : v.valor_mensal,
     }))
   }
 

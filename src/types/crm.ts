@@ -72,10 +72,12 @@ export interface Deal {
   title: string
   // plano de serviço escolhido pelo cliente (coleção planos)
   plano?: string
-  // valores do contrato: valor_total = valor_mensal × prazo_contrato_meses
-  valor_mensal?: number
-  prazo_contrato_meses?: number
-  // calculado no servidor pelo hook deals_valor_total.pb.js
+  // localização da empresa do lead (gravada no próprio registro do lead)
+  empresa?: string
+  cidade?: string
+  estado?: string
+  // calculado no servidor pelo hook deals_valor_total.pb.js a partir do
+  // CONTRATO vinculado (contratos.negocio): valor_mensal × prazo em meses
   valor_total?: number
   stage: string
   // etapa oficial do funil de serviços (coleção etapas_funil)

@@ -6,7 +6,7 @@ import { EtapaFunil, Deal, Contact, DealStatus } from '@/types/crm'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, MoreVertical, Calendar, User as UserIcon, DollarSign } from 'lucide-react'
+import { Plus, MoreVertical, Calendar, User as UserIcon, DollarSign, Building } from 'lucide-react'
 import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -274,6 +274,17 @@ export default function Pipeline() {
                         </Badge>
                       </div>
                     </div>
+
+                    {(deal.empresa || deal.cidade || deal.estado) && (
+                      <p className="text-xs text-slate-500 flex items-center gap-1">
+                        <Building className="h-3 w-3 text-slate-400 shrink-0" />
+                        <span className="truncate">
+                          {[deal.empresa, [deal.cidade, deal.estado].filter(Boolean).join(' - ')]
+                            .filter(Boolean)
+                            .join(' • ')}
+                        </span>
+                      </p>
+                    )}
 
                     {deal.expand?.contact && (
                       <p className="text-xs text-slate-500 flex items-center gap-1">

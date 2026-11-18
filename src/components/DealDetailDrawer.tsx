@@ -96,6 +96,22 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
           <SheetTitle className="text-xl font-bold text-slate-900 leading-tight">
             {deal.title}
           </SheetTitle>
+          {(deal.empresa || deal.cidade || deal.estado) && (
+            <div className="pt-1 flex items-center gap-2 text-xs text-slate-500">
+              {deal.empresa && (
+                <span className="flex items-center gap-1">
+                  <Building className="h-3.5 w-3.5" />
+                  {deal.empresa}
+                </span>
+              )}
+              {(deal.cidade || deal.estado) && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {[deal.cidade, deal.estado].filter(Boolean).join(' - ')}
+                </span>
+              )}
+            </div>
+          )}
           <div className="pt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-teal-700">
               {formatCurrency(valorOportunidade(deal))}
@@ -158,7 +174,7 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
             )}
           </div>
 
-          {/* Plano de serviço escolhido e valores do contrato (valor_total calculado no servidor) */}
+          {/* Plano de serviço escolhido (os valores do contrato ficam na tela Contratos) */}
           {(deal.expand?.plano || deal.valor_total) && (
             <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-2">
               <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -174,22 +190,6 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
                       referência: {formatCurrency(deal.expand.plano.valor_mensal_referencia)}/mês
                     </span>
                   )}
-                </div>
-              )}
-              {(deal.valor_mensal !== undefined || deal.prazo_contrato_meses !== undefined) && (
-                <div className="grid grid-cols-2 gap-2 text-center pt-1">
-                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase">Mensal</p>
-                    <p className="text-xs font-bold text-slate-800">
-                      {formatCurrency(deal.valor_mensal || 0)}
-                    </p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-2 border border-slate-100">
-                    <p className="text-[10px] font-semibold text-slate-400 uppercase">Prazo</p>
-                    <p className="text-xs font-bold text-slate-800">
-                      {deal.prazo_contrato_meses || 0} meses
-                    </p>
-                  </div>
                 </div>
               )}
               {!!deal.valor_total && (

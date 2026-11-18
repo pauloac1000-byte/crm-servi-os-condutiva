@@ -55,8 +55,9 @@ export function DealModal({
   const [expectedCloseDate, setExpectedCloseDate] = useState('')
   const [notes, setNotes] = useState('')
   const [planoId, setPlanoId] = useState('')
-  const [valorMensal, setValorMensal] = useState('')
-  const [prazoMeses, setPrazoMeses] = useState('')
+  const [empresa, setEmpresa] = useState('')
+  const [cidade, setCidade] = useState('')
+  const [estado, setEstado] = useState('')
   const [planos, setPlanos] = useState<Plano[]>([])
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -71,21 +72,9 @@ export function DealModal({
       .catch(() => setPlanos([]))
   }, [open])
 
-  // Sugere o valor mensal de referência do plano, sem sobrescrever o que o
-  // usuário já digitou (o plano é referência; o valor real é editável).
   const handlePlanoChange = (novoPlanoId: string) => {
     setPlanoId(novoPlanoId)
-    if (!novoPlanoId) return
-    const plano = planos.find((p) => p.id === novoPlanoId)
-    if (plano?.valor_mensal_referencia && !valorMensal) {
-      setValorMensal(String(plano.valor_mensal_referencia))
-    }
   }
-
-  // Valor total do contrato: valor mensal × prazo (espelha o hook do servidor)
-  const valorTotalCalc =
-    (valorMensal ? Number(valorMensal) : 0) * (prazoMeses ? Number(prazoMeses) : 0)
-  const temContrato = valorMensal && Number(valorMensal) > 0 && prazoMeses && Number(prazoMeses) > 0
 
   // Etapa de origem do negócio em edição e o estado do bloqueio do critério
   const etapaOrigem = dealToEdit ? stages.find((s) => s.id === dealToEdit.etapa) : undefined
@@ -109,16 +98,9 @@ export function DealModal({
       )
       setNotes(dealToEdit.notes || '')
       setPlanoId(dealToEdit.plano || '')
-      setValorMensal(
-        dealToEdit.valor_mensal !== undefined && dealToEdit.valor_mensal !== null
-          ? String(dealToEdit.valor_mensal)
-          : '',
-      )
-      setPrazoMeses(
-        dealToEdit.prazo_contrato_meses !== undefined && dealToEdit.prazo_contrato_meses !== null
-          ? String(dealToEdit.prazo_contrato_meses)
-          : '',
-      )
+      setEmpresa(dealToEdit.empresa || '')
+      setCidade(dealToEdit.cidade || '')
+      setEstado(dealToEdit.estado || '')
     } else {
       setTitle('')
       setStageId(defaultStageId || stages[0]?.id || '')
@@ -128,8 +110,9 @@ export function DealModal({
       setExpectedCloseDate('')
       setNotes('')
       setPlanoId('')
-      setValorMensal('')
-      setPrazoMeses('')
+      setEmpresa('')
+      setCidade('')
+      setEstado('')
     }
     setErrors({})
   }, [dealToEdit, open, stages, contacts, defaultContactId, defaultStageId])
@@ -148,8 +131,9 @@ export function DealModal({
       const payload: Partial<Deal> = {
         title: title.trim(),
         plano: planoId || undefined,
-        valor_mensal: valorMensal ? Number(valorMensal) : undefined,
-        prazo_contrato_meses: prazoMeses ? Number(prazoMeses) : undefined,
+        empresa: empresa.trim(),
+        cidade: cidade.trim(),
+        estado: estado.trim().toUpperCase(),
         etapa: stageId,
         status,
         contact: contactId,
@@ -272,57 +256,46 @@ export function DealModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="valor_mensal" className="text-slate-700 font-semibold text-xs">
-                  Valor Mensal (R$)
+            {/* Localização da empresa do lead — gravada no próprio registro do lead */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5 col-span-3">
+                <Label htmlFor="empresa" className="text-slate-700 font-semibold text-xs">
+                  Nome da Empresa
                 </Label>
                 <Input
-                  id="valor_mensal"
-                  type="number"
-                  placeholder="0.00"
-                  value={valorMensal}
-                  onChange={(e) => setValorMensal(e.target.value)}
+                  id="empresa"
+                  placeholder="Ex: Condutiva Engenharia"
+                  value={empresa}
+                  onChange={(e) => setEmpresa(e.target.value)}
                 />
-                {errors.valor_mensal && (
-                  <p className="text-xs text-rose-500">{errors.valor_mensal}</p>
-                )}
+                {errors.empresa && <p className="text-xs text-rose-500">{errors.empresa}</p>}
               </div>
-
               <div className="space-y-1.5">
-                <Label
-                  htmlFor="prazo_contrato_meses"
-                  className="text-slate-700 font-semibold text-xs"
-                >
-                  Prazo do Contrato (meses)
+                <Label htmlFor="cidade" className="text-slate-700 font-semibold text-xs">
+                  Cidade
                 </Label>
                 <Input
-                  id="prazo_contrato_meses"
-                  type="number"
-                  min={0}
-                  step={1}
-                  placeholder="12"
-                  value={prazoMeses}
-                  onChange={(e) => setPrazoMeses(e.target.value)}
+                  id="cidade"
+                  placeholder="Ex: São Paulo"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
                 />
-                {errors.prazo_contrato_meses && (
-                  <p className="text-xs text-rose-500">{errors.prazo_contrato_meses}</p>
-                )}
+                {errors.cidade && <p className="text-xs text-rose-500">{errors.cidade}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="estado" className="text-slate-700 font-semibold text-xs">
+                  Estado
+                </Label>
+                <Input
+                  id="estado"
+                  placeholder="Ex: SP"
+                  maxLength={2}
+                  value={estado}
+                  onChange={(e) => setEstado(e.target.value.toUpperCase())}
+                />
+                {errors.estado && <p className="text-xs text-rose-500">{errors.estado}</p>}
               </div>
             </div>
-
-            {temContrato && (
-              <p className="text-xs font-bold text-teal-700 text-right">
-                Valor total do contrato:{' '}
-                {new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                }).format(valorTotalCalc)}
-                <span className="block font-normal text-[10px] text-slate-500">
-                  valor mensal × prazo
-                </span>
-              </p>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

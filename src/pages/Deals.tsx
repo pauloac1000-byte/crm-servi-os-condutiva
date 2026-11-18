@@ -176,7 +176,16 @@ export default function Deals() {
                     onClick={() => setSelectedDealDetail(deal)}
                     className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                   >
-                    <td className="p-4 font-bold text-slate-900">{deal.title}</td>
+                    <td className="p-4 font-bold text-slate-900">
+                      {deal.title}
+                      {(deal.empresa || deal.cidade || deal.estado) && (
+                        <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
+                          {[deal.empresa, [deal.cidade, deal.estado].filter(Boolean).join(' - ')]
+                            .filter(Boolean)
+                            .join(' • ')}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-4 text-xs font-medium text-slate-600">
                       {deal.expand?.contact?.name || 'N/A'}
                     </td>
