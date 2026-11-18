@@ -1,11 +1,17 @@
 export type UserRole = 'admin' | 'user'
 
+// Perfil de acesso do usuário (campo "perfil" da coleção users, migration 0030).
+// Define o que ele enxerga no CRM — as regras de API por perfil estão na
+// migration 0031 do backend.
+export type Perfil = 'admin' | 'comercial' | 'tecnico'
+
 export interface User {
   id: string
   name: string
   email: string
   avatar?: string
   role?: UserRole
+  perfil?: Perfil
   created?: string
   updated?: string
   verified?: boolean
