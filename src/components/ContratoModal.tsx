@@ -274,7 +274,7 @@ export function ContratoModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="c_negocio" className="text-slate-700 font-semibold text-xs">
-                Negócio de origem
+                Lead de origem
               </Label>
               <Select
                 value={valores.negocioId}

@@ -119,7 +119,7 @@ export default function Pipeline() {
         etapa: targetStageId,
         ...extras,
       })
-      toast.success('Etapa do negócio atualizada!')
+      toast.success('Etapa do lead atualizada!')
       // Chegou à etapa 6 Compromisso com critério cumprido: oferece o cadastro
       // do contrato já preenchido (deals/contacts já estão em cache — usa o
       // recarregado para pegar valores gravados pelos hooks do servidor).
@@ -169,7 +169,7 @@ export default function Pipeline() {
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Pipeline de Vendas</h2>
           <p className="text-sm text-slate-500">
-            Arraste os cards para mover o negócio entre as etapas
+            Arraste os cards para mover o lead entre as etapas
           </p>
         </div>
         <Button
@@ -179,7 +179,7 @@ export default function Pipeline() {
           }}
           className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
         >
-          <Plus className="mr-1.5 h-4 w-4" /> Novo Negócio
+          <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
         </Button>
       </div>
 

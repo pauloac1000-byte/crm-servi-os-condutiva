@@ -69,13 +69,13 @@ export default function Deals() {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (confirm('Tem certeza que deseja excluir este negócio?')) {
+    if (confirm('Tem certeza que deseja excluir este lead?')) {
       try {
         await deleteDeal(id)
-        toast.success('Negócio excluído com sucesso!')
+        toast.success('Lead excluído com sucesso!')
         loadData()
       } catch (_) {
-        toast.error('Erro ao excluir negócio.')
+        toast.error('Erro ao excluir lead.')
       }
     }
   }
@@ -94,7 +94,7 @@ export default function Deals() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Lista de Negócios</h2>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Lista de Leads</h2>
           <p className="text-sm text-slate-500">Gestão detalhada de todas as oportunidades</p>
         </div>
         <Button
@@ -104,7 +104,7 @@ export default function Deals() {
           }}
           className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
         >
-          <Plus className="mr-1.5 h-4 w-4" /> Novo Negócio
+          <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
         </Button>
       </div>
 
@@ -166,7 +166,7 @@ export default function Deals() {
               {filteredDeals.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-400 text-sm">
-                    Nenhum negócio encontrado com os filtros atuais.
+                    Nenhum lead encontrado com os filtros atuais.
                   </td>
                 </tr>
               ) : (
@@ -196,7 +196,7 @@ export default function Deals() {
                         {deal.expand?.etapa_anterior && (
                           <span
                             className="inline-block px-2 py-1 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700"
-                            title="Etapa em que o negócio parou"
+                            title="Etapa em que o lead parou"
                           >
                             parou em: {deal.expand.etapa_anterior.nome}
                           </span>

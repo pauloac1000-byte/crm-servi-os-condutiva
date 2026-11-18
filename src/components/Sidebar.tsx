@@ -29,7 +29,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Pipeline', path: '/pipeline', icon: Kanban },
-    { label: 'Negócios', path: '/deals', icon: Briefcase },
+    { label: 'Leads', path: '/deals', icon: Briefcase },
     { label: 'Contatos', path: '/contacts', icon: Users },
     { label: 'Atividades', path: '/activities', icon: CheckCircle2 },
     { label: 'Visitas', path: '/visitas', icon: Car },

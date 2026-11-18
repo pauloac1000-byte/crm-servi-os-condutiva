@@ -256,7 +256,7 @@ export function DealDetailDrawer({ deal, open, onClose, onUpdated }: DealDetailD
 
             {activities.length === 0 ? (
               <p className="text-xs text-slate-400 italic py-2">
-                Nenhuma atividade agendada para este negócio.
+                Nenhuma atividade agendada para este lead.
               </p>
             ) : (
               <div className="space-y-2">

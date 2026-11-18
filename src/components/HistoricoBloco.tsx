@@ -35,7 +35,7 @@ export function HistoricoBloco({ deal, refreshKey }: HistoricoBlocoProps) {
   return (
     <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-3">
       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-        <History className="h-3.5 w-3.5" /> Histórico do negócio
+        <History className="h-3.5 w-3.5" /> Histórico do lead
       </h4>
       {carregando ? (
         <p className="text-xs text-slate-400 italic">Carregando histórico…</p>

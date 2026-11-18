@@ -186,7 +186,7 @@ export default function Contratos() {
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
-            placeholder="Buscar por cliente ou negócio..."
+            placeholder="Buscar por cliente ou lead..."
             className="pl-9 bg-slate-50 border-slate-200"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -234,7 +234,7 @@ export default function Contratos() {
                   {c.expand?.cliente?.name || 'Sem cliente'}
                 </p>
                 <p className="text-xs text-slate-500 truncate max-w-[220px]">
-                  {c.expand?.negocio?.title || 'Sem negócio de origem'}
+                  {c.expand?.negocio?.title || 'Sem lead de origem'}
                 </p>
               </div>
               <Badge variant="outline" className={`capitalize ${badgeStatus(c.status)}`}>

@@ -56,7 +56,7 @@ export function ForcarAvancoDialog({
             {etapaAtualNome ? ` (${etapaAtualNome})` : ''}. Como administrador, você pode forçar o
             avanço para{' '}
             {etapaDestinoNome ? <strong>{etapaDestinoNome}</strong> : 'a etapa seguinte'}. A
-            justificativa ficará gravada no histórico do negócio.
+            justificativa ficará gravada no histórico do lead.
           </DialogDescription>
         </DialogHeader>
         <Textarea

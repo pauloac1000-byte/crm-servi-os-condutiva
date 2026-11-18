@@ -178,7 +178,7 @@ export function ActivityModal({
 
             <div className="space-y-1.5">
               <Label htmlFor="act_deal" className="text-slate-700 font-semibold text-xs">
-                Negócio Vinculado
+                Lead Vinculado
               </Label>
               <Select value={dealId} onValueChange={setDealId}>
                 <SelectTrigger id="act_deal">

@@ -375,7 +375,7 @@ export function VisitasModal({
 
             <div className="space-y-1.5">
               <Label htmlFor="v_negocio" className="text-slate-700 font-semibold text-xs">
-                Negócio
+                Lead
               </Label>
               <Select value={valores.negocioId} onValueChange={(val) => set('negocioId', val)}>
                 <SelectTrigger id="v_negocio">

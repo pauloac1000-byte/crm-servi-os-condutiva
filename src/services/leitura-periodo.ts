@@ -98,7 +98,7 @@ function fraseGargalo(funil: FunilPeriodo): string | null {
   return (
     `Etapa ${g.etapaDe} → ${g.etapaPara} é o gargalo do funil, ` +
     `com ${formatarNumero(g.conversao, 0)}% de conversão; ` +
-    `sugestão: priorizar os negócios parados nessa passagem`
+    `sugestão: priorizar os leads parados nessa passagem`
   )
 }
 

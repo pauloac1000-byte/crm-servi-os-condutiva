@@ -27,7 +27,7 @@ interface HeaderProps {
 const titlesMap: Record<string, string> = {
   '/': 'Dashboard',
   '/pipeline': 'Pipeline de Vendas',
-  '/deals': 'Gestão de Negócios',
+  '/deals': 'Gestão de Leads',
   '/contacts': 'Contatos & CRM',
   '/activities': 'Atividades & Tarefas',
   '/users': 'Administração de Usuários',
@@ -95,7 +95,7 @@ export function Header({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             type="text"
-            placeholder="Buscar negócios ou contatos..."
+            placeholder="Buscar leads ou contatos..."
             className="pl-9 pr-4 h-9 bg-slate-50 border-slate-200 focus-visible:ring-[#84bd22] text-sm"
             value={searchQuery}
             onChange={(e) => {
@@ -117,7 +117,7 @@ export function Header({
                   {filteredDeals.length > 0 && (
                     <div>
                       <p className="px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        Negócios
+                        Leads
                       </p>
                       {filteredDeals.map((deal) => (
                         <button

@@ -239,7 +239,7 @@ export default function Index() {
             className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Novo Negócio
+            Novo Lead
           </Button>
         </div>
       </div>
@@ -291,7 +291,7 @@ export default function Index() {
           <CardContent className="p-5 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Negócios Abertos
+                Leads Abertos
               </p>
               <h3 className="text-2xl font-black text-slate-900 mt-1">{openDeals.length}</h3>
               <p className="text-[11px] text-slate-500 mt-1 font-medium">Em andamento no funil</p>
@@ -418,7 +418,7 @@ export default function Index() {
       <Card className="border-slate-200/80 bg-white shadow-sm rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-bold text-slate-900">
-            Últimos Negócios em Negociação
+            Últimos Leads em Negociação
           </CardTitle>
           <Link
             to="/deals"

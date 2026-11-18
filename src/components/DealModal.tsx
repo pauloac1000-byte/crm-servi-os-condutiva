@@ -184,10 +184,10 @@ export function DealModal({
           payload.justificativa_avanco = justificativa.trim()
         }
         await updateDeal(dealToEdit.id, payload)
-        toast.success('Negócio atualizado com sucesso!')
+        toast.success('Lead atualizado com sucesso!')
       } else {
         await createDeal(payload)
-        toast.success('Negócio criado com sucesso!')
+        toast.success('Lead criado com sucesso!')
       }
 
       onSuccess()
@@ -197,7 +197,7 @@ export function DealModal({
       if (Object.keys(fieldErrors).length > 0) {
         setErrors(fieldErrors)
       } else {
-        toast.error(getErrorMessage(err) || 'Ocorreu um erro ao salvar o negócio.')
+        toast.error(getErrorMessage(err) || 'Ocorreu um erro ao salvar o lead.')
       }
     } finally {
       setLoading(false)
@@ -209,14 +209,14 @@ export function DealModal({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-slate-900">
-            {dealToEdit ? 'Editar Negócio' : 'Novo Negócio'}
+            {dealToEdit ? 'Editar Lead' : 'Novo Lead'}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="title" className="text-slate-700 font-semibold text-xs">
-              Título do Negócio *
+              Título do Lead *
             </Label>
             <Input
               id="title"
@@ -469,8 +469,8 @@ export function DealModal({
                 </div>
               ) : (
                 <p className="text-xs text-amber-700">
-                  Confirme os itens do critério na tela do negócio ou peça ao administrador para
-                  forçar o avanço.
+                  Confirme os itens do critério na tela do lead ou peça ao administrador para forçar
+                  o avanço.
                 </p>
               )}
             </div>
@@ -498,7 +498,7 @@ export function DealModal({
               disabled={loading || !avançoPermitido}
               className="bg-teal-700 hover:bg-teal-800 text-white font-semibold"
             >
-              {loading ? 'Salvando...' : dealToEdit ? 'Atualizar' : 'Criar Negócio'}
+              {loading ? 'Salvando...' : dealToEdit ? 'Atualizar' : 'Criar Lead'}
             </Button>
           </DialogFooter>
         </form>

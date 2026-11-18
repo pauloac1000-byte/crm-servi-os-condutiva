@@ -28,8 +28,8 @@ export function PrecisaAcao() {
       },
       {
         chave: 'parados',
-        titulo: 'Negócios parados',
-        descricaoVazio: 'Nenhum negócio parado além do prazo',
+        titulo: 'Leads parados',
+        descricaoVazio: 'Nenhum lead parado além do prazo',
         icone: Clock,
         itens: dados.negociosParados,
         verTodos: '/pipeline',

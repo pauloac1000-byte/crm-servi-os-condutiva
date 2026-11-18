@@ -200,9 +200,7 @@ function secaoFunil(doc: Doc, y0: number, funil: FunilPeriodo): number {
   let y = secao(doc, y0, 'Funil de vendas (7 etapas)')
   autoTableTabela(doc, {
     startY: y,
-    head: [
-      ['Etapa', 'Negócios', 'Valor', 'Conv. p/ próxima', 'Tempo médio', 'Perdidos', 'Gargalo'],
-    ],
+    head: [['Etapa', 'Leads', 'Valor', 'Conv. p/ próxima', 'Tempo médio', 'Perdidos', 'Gargalo']],
     body: funil.etapas.map((e) => [
       e.nome,
       String(e.negocios),
@@ -353,7 +351,7 @@ function secaoAcao(doc: Doc, y0: number, p: PrecisaAcaoResultado): number {
   let y = secao(doc, y0, 'Precisa de ação')
   const grupos: { nome: string; itens: { titulo: string; detalhe: string }[] }[] = [
     { nome: 'OS com prazo vencendo/vencidas', itens: p.osAtrasadas },
-    { nome: 'Negócios parados além do prazo da etapa', itens: p.negociosParados },
+    { nome: 'Leads parados além do prazo da etapa', itens: p.negociosParados },
     { nome: 'Propostas sem retorno', itens: p.propostasSemRetorno },
   ]
   const corpo = grupos.flatMap((g) =>
@@ -470,10 +468,10 @@ export async function gerarRelatorioDashboardPdf(
     y = linha(
       doc,
       y,
-      'Receita fechada (negócios ganhos)',
+      'Receita fechada (leads ganhos)',
       formatarMoeda(entrada.resumoCartoes.receitaFechada),
     )
-    y = linha(doc, y, 'Negócios abertos', String(entrada.resumoCartoes.negociosAbertos))
+    y = linha(doc, y, 'Leads abertos', String(entrada.resumoCartoes.negociosAbertos))
     y = linha(doc, y, 'Valor do pipeline', formatarMoeda(entrada.resumoCartoes.valorPipeline))
     y = linha(
       doc,

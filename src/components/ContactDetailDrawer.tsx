@@ -139,7 +139,7 @@ export function ContactDetailDrawer({
               className="flex-1 bg-teal-700 hover:bg-teal-800 text-white text-xs gap-1.5 font-semibold"
               onClick={() => setNewDealOpen(true)}
             >
-              <PlusCircle className="h-4 w-4" /> Novo Negócio
+              <PlusCircle className="h-4 w-4" /> Novo Lead
             </Button>
             <Button
               variant="outline"
@@ -152,12 +152,10 @@ export function ContactDetailDrawer({
 
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Negócios Vincuados ({deals.length})
+              Leads Vinculados ({deals.length})
             </h4>
             {deals.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">
-                Nenhum negócio associado a este contato.
-              </p>
+              <p className="text-xs text-slate-400 italic">Nenhum lead associado a este contato.</p>
             ) : (
               <div className="space-y-2">
                 {deals.map((d) => (
