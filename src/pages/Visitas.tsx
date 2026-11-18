@@ -111,6 +111,16 @@ export default function Visitas() {
   const nomeResponsavel = (v: VisitaComercial) =>
     v.expand?.responsavel?.name || v.expand?.responsavel?.email || ''
 
+  // Título do card: empresa do lead vinculada; sem empresa, nome do contato
+  const tituloVisita = (v: VisitaComercial) => (v.empresa || v.expand?.contato?.name || '').trim()
+
+  // Cidade – estado do contato vinculado (a visita não guarda localidade própria)
+  const localidadeVisita = (v: VisitaComercial) =>
+    [v.expand?.contato?.cidade, v.expand?.contato?.estado]
+      .map((p) => (p || '').trim())
+      .filter(Boolean)
+      .join(' – ')
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -257,17 +267,23 @@ export default function Visitas() {
                   <Car className="h-4 w-4" />
                 </div>
                 <div>
-                  {/* Lead/empresa em evidência; tipo, data e responsável como apoio */}
-                  {v.expand?.negocio && (
+                  {/* Título: empresa do lead (sem empresa, cai no nome do contato) */}
+                  {tituloVisita(v) && (
                     <h3
                       className="text-lg font-bold leading-tight capitalize"
                       style={{ color: 'var(--condutiva-texto)' }}
                     >
-                      {v.expand.negocio.title}
+                      {tituloVisita(v)}
                     </h3>
                   )}
+                  {/* Cidade – estado do contato vinculado, em tamanho menor */}
+                  {localidadeVisita(v) && (
+                    <p className="text-xs capitalize" style={{ color: 'var(--condutiva-cinza)' }}>
+                      {localidadeVisita(v)}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                    {v.expand?.negocio && v.expand?.contato ? (
+                    {v.expand?.contato && tituloVisita(v) !== v.expand.contato.name && (
                       <span
                         className="flex items-center gap-1 text-xs"
                         style={{ color: 'var(--condutiva-cinza)' }}
@@ -275,18 +291,11 @@ export default function Visitas() {
                         <MapPin className="h-3.5 w-3.5" />
                         {v.expand.contato.name}
                       </span>
-                    ) : (
-                      <>
-                        {v.expand?.contato && (
-                          <h3
-                            className="text-lg font-bold leading-tight"
-                            style={{ color: 'var(--condutiva-texto)' }}
-                          >
-                            {v.expand.contato.name}
-                          </h3>
-                        )}
-                        <h4 className="text-base font-bold text-slate-900 capitalize">{v.tipo}</h4>
-                      </>
+                    )}
+                    {v.tipo && (
+                      <span className="text-xs font-semibold capitalize text-slate-600">
+                        {v.tipo}
+                      </span>
                     )}
                     {v.data && (
                       <span
