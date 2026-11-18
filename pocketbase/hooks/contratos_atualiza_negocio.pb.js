@@ -10,18 +10,42 @@
 // Sem contrato ou valor: 0.
 //
 // ATENÇÃO (JSVM): callbacks não enxergam declarações de topo de arquivo —
-// toda a lógica vive inline dentro de cada callback.
+// toda a lógica de recálculo vive INLINE dentro de cada callback.
 // ATENÇÃO: em hooks de registro não existe a global "app" — usar e.app.
-// Regra do projeto: e.next() em TODOS os caminhos de sucesso.
+// Regra do projeto: e.next() em TODOS os caminhos de sucesso; bloqueio com throw.
 
 onRecordCreate((e) => {
   const negocioId = e.record.getString('negocio')
   if (negocioId) {
     try {
+      // recálculo INLINE: contrato mais recente vinculado ao negócio
       const deal = e.app.findRecordById('deals', negocioId)
-      recalcular(e, deal)
+      let valorTotal = 0
+      const contratos = e.app.findRecordsByFilter(
+        'contratos',
+        'negocio = {:id}',
+        '-created',
+        1,
+        0,
+        { id: negocioId },
+      )
+      if (contratos.length > 0) {
+        const c = contratos[0]
+        const mensal = c.getFloat('valor_mensal')
+        const ini = (c.getString('data_inicio') || '').split(' ')[0].split('T')[0]
+        const fim = (c.getString('data_fim') || '').split(' ')[0].split('T')[0]
+        let prazo = 12
+        if (ini && fim) {
+          const dias =
+            (new Date(fim).getTime() - new Date(ini).getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+          prazo = Math.round(dias)
+        }
+        if (mensal > 0 && prazo > 0) valorTotal = mensal * prazo
+      }
+      deal.set('valor_total', valorTotal)
+      e.app.save(deal)
     } catch (err) {
-      console.log('contratos_atualiza_negocio: deal não encontrado: ' + err)
+      console.log('contratos_atualiza_negocio: falha ao sincronizar negócio: ' + err)
     }
   }
   e.next()
@@ -29,20 +53,42 @@ onRecordCreate((e) => {
 
 onRecordUpdate((e) => {
   const negocioId = e.record.getString('negocio')
-  // negocio removido na edição: zera o valor_total do negócio anterior
+  // negocio removido/trocado na edição: recalcula o negócio anterior também
   const negocioAnterior = e.record.original().getString('negocio')
-  try {
-    if (negocioId) {
-      const deal = e.app.findRecordById('deals', negocioId)
-      recalcular(e, deal)
+  const alvos = []
+  if (negocioId) alvos.push(negocioId)
+  if (negocioAnterior && negocioAnterior !== negocioId) alvos.push(negocioAnterior)
+  for (let i = 0; i < alvos.length; i++) {
+    try {
+      // recálculo INLINE: contrato mais recente vinculado ao negócio
+      const deal = e.app.findRecordById('deals', alvos[i])
+      let valorTotal = 0
+      const contratos = e.app.findRecordsByFilter(
+        'contratos',
+        'negocio = {:id}',
+        '-created',
+        1,
+        0,
+        { id: alvos[i] },
+      )
+      if (contratos.length > 0) {
+        const c = contratos[0]
+        const mensal = c.getFloat('valor_mensal')
+        const ini = (c.getString('data_inicio') || '').split(' ')[0].split('T')[0]
+        const fim = (c.getString('data_fim') || '').split(' ')[0].split('T')[0]
+        let prazo = 12
+        if (ini && fim) {
+          const dias =
+            (new Date(fim).getTime() - new Date(ini).getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+          prazo = Math.round(dias)
+        }
+        if (mensal > 0 && prazo > 0) valorTotal = mensal * prazo
+      }
+      deal.set('valor_total', valorTotal)
+      e.app.save(deal)
+    } catch (err) {
+      console.log('contratos_atualiza_negocio: falha ao sincronizar negócio: ' + err)
     }
-    if (negocioAnterior && negocioAnterior !== negocioId) {
-      const dealAnterior = e.app.findRecordById('deals', negocioAnterior)
-      dealAnterior.set('valor_total', 0)
-      e.app.save(dealAnterior)
-    }
-  } catch (err) {
-    console.log('contratos_atualiza_negocio: falha ao sincronizar negócio: ' + err)
   }
   e.next()
 }, 'contratos')
@@ -51,8 +97,32 @@ onRecordDelete((e) => {
   const negocioId = e.record.getString('negocio')
   if (negocioId) {
     try {
+      // recálculo INLINE: sem o contrato deletado, o negócio volta a procurar
+      // outro contrato vinculado (0 se não houver nenhum)
       const deal = e.app.findRecordById('deals', negocioId)
-      deal.set('valor_total', 0)
+      let valorTotal = 0
+      const contratos = e.app.findRecordsByFilter(
+        'contratos',
+        'negocio = {:id}',
+        '-created',
+        1,
+        0,
+        { id: negocioId },
+      )
+      if (contratos.length > 0) {
+        const c = contratos[0]
+        const mensal = c.getFloat('valor_mensal')
+        const ini = (c.getString('data_inicio') || '').split(' ')[0].split('T')[0]
+        const fim = (c.getString('data_fim') || '').split(' ')[0].split('T')[0]
+        let prazo = 12
+        if (ini && fim) {
+          const dias =
+            (new Date(fim).getTime() - new Date(ini).getTime()) / (1000 * 60 * 60 * 24 * 30.44)
+          prazo = Math.round(dias)
+        }
+        if (mensal > 0 && prazo > 0) valorTotal = mensal * prazo
+      }
+      deal.set('valor_total', valorTotal)
       e.app.save(deal)
     } catch (err) {
       console.log('contratos_atualiza_negocio: falha ao zerar negócio: ' + err)

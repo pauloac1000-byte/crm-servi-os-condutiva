@@ -11,6 +11,7 @@ import {
   Wrench,
   Target,
   ShieldCheck,
+  BookOpen,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -36,6 +37,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     { label: 'Contratos', path: '/contratos', icon: FileText },
     { label: 'Ordens de Serviço', path: '/ordens-servico', icon: Wrench },
     { label: 'Metas', path: '/metas', icon: Target },
+    { label: 'Glossário de indicadores', path: '/glossario', icon: BookOpen },
     ...(isAdmin ? [{ label: 'Usuários', path: '/users', icon: ShieldCheck }] : []),
   ]
 

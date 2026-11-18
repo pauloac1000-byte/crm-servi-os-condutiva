@@ -1,7 +1,17 @@
+import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useKpis } from '@/hooks/use-kpis'
 import type { KpisEntrada, KpiResultado, KpiSituacao } from '@/services/kpis'
-import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { INDICADORES_KPI_FAIXA, type IndicadorDoc } from '@/lib/glossario-indicadores'
+import { cn } from '@/lib/utils'
 
 // Faixa com os cinco KPIs da unidade de serviços no topo do Dashboard.
 // Toda a conta vem do motor src/services/kpis.ts (via useKpis); aqui só há
@@ -87,6 +97,7 @@ export function KpisFaixa({ entrada }: { entrada: KpisEntrada }) {
             key={k?.kpi ?? i}
             kpi={k}
             ultimo={cartoes.length > 0 && i === cartoes.length - 1}
+            doc={INDICADORES_KPI_FAIXA[i]}
           />
         ))}
       </div>
@@ -94,7 +105,16 @@ export function KpisFaixa({ entrada }: { entrada: KpisEntrada }) {
   )
 }
 
-function KpiCartao({ kpi, ultimo }: { kpi: KpiResultado | null; ultimo?: boolean }) {
+function KpiCartao({
+  kpi,
+  ultimo,
+  doc,
+}: {
+  kpi: KpiResultado | null
+  ultimo?: boolean
+  doc?: IndicadorDoc
+}) {
+  const [detalhes, setDetalhes] = useState(false)
   const situacao = kpi?.situacao ?? null
   const cor = situacao ? SEMAFORO[situacao] : null
   const IconeSituacao = cor?.Icone
@@ -109,9 +129,22 @@ function KpiCartao({ kpi, ultimo }: { kpi: KpiResultado | null; ultimo?: boolean
       }`}
     >
       <CardContent className="p-5 space-y-2">
-        <p className="text-[11px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight">
-          {kpi ? rotuloCurto(kpi) : '—'}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[11px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider leading-tight">
+            {kpi ? rotuloCurto(kpi) : '—'}
+          </p>
+          {doc && (
+            <button
+              type="button"
+              aria-label={`Como é calculado: ${doc.nome}`}
+              title="Como é calculado"
+              onClick={() => setDetalhes(true)}
+              className="shrink-0 rounded-full p-1 text-slate-300 hover:text-teal-700 hover:bg-teal-50 transition-colors"
+            >
+              <Info className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <h3 className="text-2xl font-black text-slate-900">
           {kpi ? fmtValor(kpi, kpi.realizado) : '—'}
         </h3>
@@ -153,6 +186,48 @@ function KpiCartao({ kpi, ultimo }: { kpi: KpiResultado | null; ultimo?: boolean
           {IconeSituacao && <IconeSituacao className="h-3 w-3 shrink-0" aria-hidden="true" />}
           {cor ? cor.rotulo : 'sem meta para comparar'}
         </p>
+
+        {/* detalhe "como é calculado": fórmula, fonte, meta e leitura —
+            mesmo conteúdo do Glossário de indicadores */}
+        {doc && (
+          <Dialog open={detalhes} onOpenChange={setDetalhes}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="text-base font-bold text-slate-900">{doc.nome}</DialogTitle>
+                <DialogDescription className="text-xs text-slate-500">
+                  Como este indicador é calculado (ver também o Glossário de indicadores no menu
+                  lateral)
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Fórmula
+                  </p>
+                  <p className="text-slate-700 text-[13px] leading-relaxed">{doc.fórmula}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Fonte dos dados
+                  </p>
+                  <p className="text-slate-700 text-[13px] leading-relaxed">{doc.fonte}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Meta
+                  </p>
+                  <p className="text-slate-700 text-[13px] leading-relaxed">{doc.meta}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Leitura do indicador
+                  </p>
+                  <p className={cn('text-slate-700 text-[13px] leading-relaxed')}>{doc.leitura}</p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   )

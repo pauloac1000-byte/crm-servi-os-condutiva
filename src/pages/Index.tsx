@@ -15,6 +15,7 @@ import {
   Plus,
   CheckCircle2,
   ArrowRight,
+  Clock,
 } from 'lucide-react'
 import { DealModal } from '@/components/DealModal'
 import { ContactModal } from '@/components/ContactModal'
@@ -150,10 +151,36 @@ export default function Index() {
       setStages(s)
       setActivities(a)
       setContacts(c)
+      // última atualização dos dados (rodapé do Dashboard)
+      setUltimaAtualizacao(new Date())
     } catch {
       /* intentionally ignored */
     }
   }
+
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null)
+  const [agora, setAgora] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setAgora(new Date()), 30_000)
+    return () => clearInterval(t)
+  }, [])
+  const rotuloUltimaAtualizacao = (() => {
+    if (!ultimaAtualizacao) return null
+    const difSeg = Math.floor((agora.getTime() - ultimaAtualizacao.getTime()) / 1000)
+    const horario = ultimaAtualizacao.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    const hoje = new Date()
+    const mesmoDia = ultimaAtualizacao.toDateString() === hoje.toDateString()
+    const data = mesmoDia ? 'hoje' : ultimaAtualizacao.toLocaleDateString('pt-BR')
+    if (difSeg < 60) return `Dados atualizados ${data} às ${horario} (agora mesmo)`
+    if (difSeg < 3600) {
+      const min = Math.floor(difSeg / 60)
+      return `Dados atualizados ${data} às ${horario} (há ${min} min)`
+    }
+    return `Dados atualizados ${data} às ${horario}`
+  })()
 
   useEffect(() => {
     loadDashboardData()
@@ -495,6 +522,12 @@ export default function Index() {
         onOpenChange={setContactModalOpen}
         onSuccess={loadDashboardData}
       />
+
+      {/* rodapé do Dashboard: data e hora da última atualização dos dados */}
+      <p className="flex items-center gap-1.5 border-t border-slate-100 pt-4 text-[11px] text-slate-400">
+        <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+        {rotuloUltimaAtualizacao ?? 'Carregando dados…'}
+      </p>
     </div>
   )
 }

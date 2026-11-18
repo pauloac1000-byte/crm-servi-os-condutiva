@@ -15,6 +15,7 @@ import Visitas from './pages/Visitas'
 import Contratos from './pages/Contratos'
 import OrdensServico from './pages/OrdensServico'
 import Metas from './pages/Metas'
+import Glossario from './pages/Glossario'
 import UsersPage from './pages/Users'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/contratos" element={<Contratos />} />
               <Route path="/ordens-servico" element={<OrdensServico />} />
               <Route path="/metas" element={<Metas />} />
+              <Route path="/glossario" element={<Glossario />} />
 
               <Route element={<AdminRoute />}>
                 <Route path="/users" element={<UsersPage />} />
