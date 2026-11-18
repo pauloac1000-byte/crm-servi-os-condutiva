@@ -257,34 +257,57 @@ export default function Visitas() {
                   <Car className="h-4 w-4" />
                 </div>
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-base font-bold text-slate-900 capitalize">{v.tipo}</h4>
+                  {/* Lead/empresa em evidência; tipo, data e responsável como apoio */}
+                  {v.expand?.negocio && (
+                    <h3
+                      className="text-lg font-bold leading-tight capitalize"
+                      style={{ color: 'var(--condutiva-texto)' }}
+                    >
+                      {v.expand.negocio.title}
+                    </h3>
+                  )}
+                  <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                    {v.expand?.negocio && v.expand?.contato ? (
+                      <span
+                        className="flex items-center gap-1 text-xs"
+                        style={{ color: 'var(--condutiva-cinza)' }}
+                      >
+                        <MapPin className="h-3.5 w-3.5" />
+                        {v.expand.contato.name}
+                      </span>
+                    ) : (
+                      <>
+                        {v.expand?.contato && (
+                          <h3
+                            className="text-lg font-bold leading-tight"
+                            style={{ color: 'var(--condutiva-texto)' }}
+                          >
+                            {v.expand.contato.name}
+                          </h3>
+                        )}
+                        <h4 className="text-base font-bold text-slate-900 capitalize">{v.tipo}</h4>
+                      </>
+                    )}
                     {v.data && (
-                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <span
+                        className="text-xs flex items-center gap-1"
+                        style={{ color: 'var(--condutiva-cinza)' }}
+                      >
                         <Clock className="h-3.5 w-3.5" />
                         {new Date(v.data).toLocaleDateString('pt-BR')}
                       </span>
                     )}
                     {nomeResponsavel(v) && (
-                      <span className="text-[11px] font-medium text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">
+                      <span
+                        className="text-[11px] font-medium bg-slate-100 rounded-full px-2 py-0.5"
+                        style={{ color: 'var(--condutiva-cinza)' }}
+                      >
                         {nomeResponsavel(v)}
                       </span>
                     )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1.5">
-                    {v.expand?.contato && (
-                      <span className="flex items-center gap-1 font-medium text-slate-600">
-                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                        {v.expand.contato.name}
-                      </span>
-                    )}
-                    {v.expand?.negocio && (
-                      <span className="flex items-center gap-1 font-medium text-slate-600">
-                        <Briefcase className="h-3.5 w-3.5 text-slate-400" />
-                        {v.expand.negocio.title}
-                      </span>
-                    )}
                     {!!v.km_rodados && <span>{v.km_rodados} km</span>}
                     {!!v.horas_dedicadas && <span>{v.horas_dedicadas} h</span>}
                   </div>
