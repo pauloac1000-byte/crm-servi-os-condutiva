@@ -3,7 +3,19 @@ import { Check, Filter, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { compararTexto } from '@/lib/ordenacao-alfabetica'
 
-export type ColunaFiltravelId = 'titulo' | 'contato' | 'etapa' | 'prioridade' | 'previsao'
+export type ColunaFiltravelId =
+  | 'titulo'
+  | 'contato'
+  | 'etapa'
+  | 'prioridade'
+  | 'previsao'
+  // Gestão de Contatos
+  | 'nome'
+  | 'empresa'
+  | 'cargo'
+  | 'email'
+  | 'telefone'
+  | 'status'
 
 export interface ColunaFiltravel {
   id: ColunaFiltravelId
@@ -178,6 +190,16 @@ export const COLUNAS_FILTRAVEIS: ColunaFiltravel[] = [
   { id: 'etapa', rotulo: 'Etapa' },
   { id: 'prioridade', rotulo: 'Prioridade' },
   { id: 'previsao', rotulo: 'Previsão' },
+]
+
+/** Colunas filtráveis da Gestão de Contatos. */
+export const COLUNAS_FILTRAVEIS_CONTATOS: ColunaFiltravel[] = [
+  { id: 'nome', rotulo: 'Nome' },
+  { id: 'empresa', rotulo: 'Empresa' },
+  { id: 'cargo', rotulo: 'Cargo' },
+  { id: 'email', rotulo: 'E-mail' },
+  { id: 'telefone', rotulo: 'Telefone' },
+  { id: 'status', rotulo: 'Status' },
 ]
 
 /** Extrai os valores distintos de uma coluna a partir dos dados (para as opções do dropdown). */

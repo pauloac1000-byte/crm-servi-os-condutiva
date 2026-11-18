@@ -12,7 +12,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Trash2, Edit2, Mail, Phone, Building, MapPin } from 'lucide-react'
+import {
+  ColumnFilter,
+  COLUNAS_FILTRAVEIS_CONTATOS,
+  getValoresColuna,
+  type ColunaFiltravelId,
+  type FiltroColuna,
+} from '@/components/ColumnFilter'
+import { Search, Plus, Trash2, Edit2, Mail, Phone, Building, MapPin, X } from 'lucide-react'
 import { ContactModal } from '@/components/ContactModal'
 import { ContactDetailDrawer } from '@/components/ContactDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -27,6 +34,9 @@ export default function Contacts() {
   const [contactModalOpen, setContactModalOpen] = useState(false)
   const [contactToEdit, setContactToEdit] = useState<Contact | null>(null)
   const [selectedContactDetail, setSelectedContactDetail] = useState<Contact | null>(null)
+  const [filtrosColuna, setFiltrosColuna] = useState<FiltroColuna[]>(
+    COLUNAS_FILTRAVEIS_CONTATOS.map((c) => ({ id: c.id, valores: [] })),
+  )
 
   const loadData = async () => {
     try {
@@ -56,6 +66,26 @@ export default function Contacts() {
     }
   }
 
+  // Filtro por coluna (seleção múltipla): coluna sem seleção = sem filtro
+  const valorColuna = (contato: Contact, id: ColunaFiltravelId): string => {
+    switch (id) {
+      case 'nome':
+        return contato.name
+      case 'empresa':
+        return contato.company || 'N/A'
+      case 'cargo':
+        return contato.role || 'N/A'
+      case 'email':
+        return contato.email || 'N/A'
+      case 'telefone':
+        return contato.phone || 'N/A'
+      case 'status':
+        return contato.status
+      default:
+        return ''
+    }
+  }
+
   const filteredContacts = contacts.filter((c) => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,10 +95,24 @@ export default function Contacts() {
       (c.estado || '').toLowerCase().includes(search.toLowerCase())
 
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter
-    return matchesSearch && matchesStatus
+
+    const matchesColunas = filtrosColuna.every((f) => {
+      if (f.valores.length === 0) return true
+      return f.valores.includes(valorColuna(c, f.id))
+    })
+
+    return matchesSearch && matchesStatus && matchesColunas
   })
   // Ordem inicial: nome de A a Z (sem acentos e maiúsculas)
   filteredContacts.sort((a, b) => compararTexto(a.name, b.name))
+
+  const limparFiltros = () => {
+    setSearch('')
+    setStatusFilter('all')
+    setFiltrosColuna((atual) => atual.map((f) => ({ ...f, valores: [] })))
+  }
+  const temFiltroAtivo =
+    search !== '' || statusFilter !== 'all' || filtrosColuna.some((f) => f.valores.length > 0)
 
   const statusColors: Record<string, string> = {
     cliente: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -120,15 +164,97 @@ export default function Contacts() {
         </Select>
       </div>
 
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-slate-500">
+          Exibindo <span className="font-bold text-slate-900">{filteredContacts.length}</span> de{' '}
+          {contacts.length} {contacts.length === 1 ? 'contato' : 'contatos'}
+        </p>
+        {temFiltroAtivo && (
+          <Button
+            variant="outline"
+            onClick={limparFiltros}
+            className="font-semibold text-xs h-9 text-slate-600 hover:text-teal-700"
+          >
+            <X className="mr-1.5 h-4 w-4" /> Limpar filtros
+          </Button>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               <tr>
-                <th className="p-4">Nome</th>
-                <th className="p-4">Empresa / Cargo</th>
-                <th className="p-4">Contato</th>
-                <th className="p-4">Status</th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Nome</span>
+                    <ColumnFilter
+                      coluna="Nome"
+                      valores={getValoresColuna(contacts, valorColuna, 'nome')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'nome')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'nome' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Empresa / Cargo</span>
+                    <ColumnFilter
+                      coluna="Empresa"
+                      valores={getValoresColuna(contacts, valorColuna, 'empresa')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'empresa')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'empresa' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Contato</span>
+                    <ColumnFilter
+                      coluna="E-mail"
+                      valores={getValoresColuna(contacts, valorColuna, 'email')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'email')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'email' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                    <ColumnFilter
+                      coluna="Telefone"
+                      valores={getValoresColuna(contacts, valorColuna, 'telefone')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'telefone')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'telefone' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Status</span>
+                    <ColumnFilter
+                      coluna="Status"
+                      valores={getValoresColuna(contacts, valorColuna, 'status')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'status')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'status' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
                 <th className="p-4 text-right">Ações</th>
               </tr>
             </thead>
@@ -136,7 +262,7 @@ export default function Contacts() {
               {filteredContacts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-400 text-sm">
-                    Nenhum contato encontrado.
+                    Nenhum contato encontrado com os filtros atuais.
                   </td>
                 </tr>
               ) : (
