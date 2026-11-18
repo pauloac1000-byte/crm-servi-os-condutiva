@@ -33,6 +33,17 @@ import { getConfiguracoes } from '@/services/configuracoes'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useEficienciaComercial } from '@/hooks/use-eficiencia-comercial'
 import { compararTexto, tempoData } from '@/lib/ordenacao-alfabetica'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { TrendingUp } from 'lucide-react'
 
@@ -48,10 +59,13 @@ export default function Visitas() {
   const [custoHora, setCustoHora] = useState(90)
   const isAdmin = user?.role === 'admin'
 
-  // Filtros: período (intervalo de datas) e responsável
+  // Filtros: período (intervalo de datas), responsável, lead e tipo de visita
   const [dataDe, setDataDe] = useState('')
   const [dataAte, setDataAte] = useState('')
   const [responsavelFiltro, setResponsavelFiltro] = useState('todos')
+  const [leadFiltro, setLeadFiltro] = useState('todos')
+  const [tipoFiltro, setTipoFiltro] = useState('todos')
+  const [leadComboAberto, setLeadComboAberto] = useState(false)
 
   const loadData = async () => {
     try {
@@ -98,6 +112,8 @@ export default function Visitas() {
           if (dataDe && v.data && v.data < `${dataDe} 00:00:00.000Z`) return false
           if (dataAte && v.data && v.data > `${dataAte} 23:59:59.000Z`) return false
           if (responsavelFiltro !== 'todos' && v.responsavel !== responsavelFiltro) return false
+          if (leadFiltro !== 'todos' && v.contato !== leadFiltro) return false
+          if (tipoFiltro !== 'todos' && v.tipo !== tipoFiltro) return false
           return true
         })
         // Ordem inicial: lead/empresa de A a Z; dentro do mesmo lead, data mais recente primeiro
@@ -110,7 +126,7 @@ export default function Visitas() {
           return tempoData(b.data) - tempoData(a.data)
         })
     )
-  }, [visitas, dataDe, dataAte, responsavelFiltro])
+  }, [visitas, dataDe, dataAte, responsavelFiltro, leadFiltro, tipoFiltro])
 
   const custoTotalPeriodo = useMemo(
     () => visitasFiltradas.reduce((soma, v) => soma + (v.custo_total || 0), 0),
@@ -122,12 +138,41 @@ export default function Visitas() {
     dataDe,
     dataAte,
     responsavel: responsavelFiltro,
+    lead: leadFiltro,
+    tipo: tipoFiltro as 'presencial' | 'remota' | 'todos',
   })
   // recarrega os indicadores junto com os dados (tempo real)
   useEffect(() => {
     eficiencia.recalcular()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitas])
+
+  // Leads que têm ao menos uma visita registrada (opções do dropdown Lead)
+  const leadsComVisita = useMemo(() => {
+    const ids = new Set(visitas.map((v) => v.contato).filter(Boolean) as string[])
+    return contacts
+      .filter((c) => ids.has(c.id))
+      .sort((a, b) => compararTexto(a.company || a.name, b.company || b.name))
+  }, [visitas, contacts])
+
+  const nomeLead = (id: string) => {
+    const c = contacts.find((x) => x.id === id)
+    return c ? c.company || c.name : ''
+  }
+
+  const rotuloLeadFiltro =
+    leadFiltro !== 'todos' ? nomeLead(leadFiltro) || 'Lead selecionado' : 'Todos os leads'
+
+  const limparFiltros = () => {
+    setDataDe('')
+    setDataAte('')
+    setResponsavelFiltro('todos')
+    setLeadFiltro('todos')
+    setTipoFiltro('todos')
+  }
+
+  const filtrosAtivos =
+    !!dataDe || !!dataAte || responsavelFiltro !== 'todos' || leadFiltro !== 'todos' || tipoFiltro !== 'todos'
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -260,6 +305,101 @@ export default function Visitas() {
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="f_lead" className="text-slate-700 font-semibold text-xs">
+            Lead
+          </Label>
+          <Popover open={leadComboAberto} onOpenChange={setLeadComboAberto}>
+            <PopoverTrigger asChild>
+              <Button
+                id="f_lead"
+                variant="outline"
+                role="combobox"
+                aria-expanded={leadComboAberto}
+                className="w-full justify-between font-normal h-10"
+              >
+                <span className="truncate">{rotuloLeadFiltro}</span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Buscar lead…" />
+                <CommandList>
+                  <CommandEmpty>Nenhum lead encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="todos"
+                      onSelect={() => {
+                        setLeadFiltro('todos')
+                        setLeadComboAberto(false)
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          leadFiltro === 'todos' ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                      Todos os leads
+                    </CommandItem>
+                  </CommandGroup>
+                  <CommandGroup heading="Leads com visita registrada">
+                    {leadsComVisita.map((c) => (
+                      <CommandItem
+                        key={c.id}
+                        value={`${c.company || c.name} ${c.name}`}
+                        onSelect={() => {
+                          setLeadFiltro(c.id)
+                          setLeadComboAberto(false)
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            leadFiltro === c.id ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                        <span className="truncate">
+                          {c.company || c.name}
+                          {c.company && c.name ? ` — ${c.name}` : ''}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="f_tipo" className="text-slate-700 font-semibold text-xs">
+            Tipo de visita
+          </Label>
+          <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+            <SelectTrigger id="f_tipo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos</SelectItem>
+              <SelectItem value="presencial">Presencial</SelectItem>
+              <SelectItem value="remota">Remoto</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-slate-700 font-semibold text-xs opacity-0 select-none">
+            Ações
+          </Label>
+          <Button
+            variant="outline"
+            onClick={limparFiltros}
+            disabled={!filtrosAtivos}
+            className="w-full h-10 font-semibold text-xs"
+          >
+            Limpar filtros
+          </Button>
+        </div>
         <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200">
           <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider">
             Custo no período
@@ -354,6 +494,7 @@ export default function Visitas() {
                     </p>
                   )}
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
+>>>>>>>
                     {v.expand?.contato && tituloVisita(v) !== v.expand.contato.name && (
                       <span
                         className="flex items-center gap-1 text-xs"

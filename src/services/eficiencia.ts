@@ -32,6 +32,11 @@ export interface EficienciaFiltros {
   dataDe?: string // 'YYYY-MM-DD' ou vazio
   dataAte?: string
   responsavel?: string // id do usuário ou 'todos'
+  // recorte opcional por lead (contato vinculado à visita) e por tipo.
+  // Só encurtam o conjunto de visitas que alimenta os indicadores —
+  // os custos por km, combustível e pedágio de cada visita não mudam.
+  lead?: string // id do contato ou 'todos'
+  tipo?: 'presencial' | 'remota' | 'todos'
 }
 
 // Ordem (posição) das etapas-alvo no funil de serviços:
@@ -109,6 +114,8 @@ export async function calcularEficienciaComercial(
   const de = limparFiltro(filtros.dataDe)
   const ate = limparFiltro(filtros.dataAte)
   const responsavel = limparFiltro(filtros.responsavel)
+  const lead = limparFiltro(filtros.lead)
+  const tipo = filtros.tipo && filtros.tipo !== 'todos' ? filtros.tipo : ''
 
   const ordemEtapas = await carregarOrdemEtapas()
   const [visitas, contagens] = await Promise.all([
@@ -117,7 +124,11 @@ export async function calcularEficienciaComercial(
   ])
 
   const doPeriodo = visitas.filter(
-    (v) => dentroDoPeriodo(v.data, de, ate) && (!responsavel || v.responsavel === responsavel),
+    (v) =>
+      dentroDoPeriodo(v.data, de, ate) &&
+      (!responsavel || v.responsavel === responsavel) &&
+      (!lead || v.contato === lead) &&
+      (!tipo || v.tipo === tipo),
   )
 
   const custoTotal = doPeriodo.reduce((s, v) => s + (v.custo_total || 0), 0)

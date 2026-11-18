@@ -14,7 +14,9 @@ export function useEficienciaComercial(filtros: EficienciaFiltros) {
   const [erro, setErro] = useState<string | null>(null)
 
   // serializa os filtros para não reexecutar a cada render do pai
-  const chave = `${filtros.dataDe || ''}|${filtros.dataAte || ''}|${filtros.responsavel || ''}`
+  const chave =
+    `${filtros.dataDe || ''}|${filtros.dataAte || ''}|${filtros.responsavel || ''}` +
+    `|${filtros.lead || ''}|${filtros.tipo || ''}`
 
   useEffect(() => {
     let ativo = true
@@ -24,6 +26,8 @@ export function useEficienciaComercial(filtros: EficienciaFiltros) {
       dataDe: filtros.dataDe,
       dataAte: filtros.dataAte,
       responsavel: filtros.responsavel,
+      lead: filtros.lead,
+      tipo: filtros.tipo,
     })
       .then((r) => {
         if (ativo) setDados(r)
@@ -48,6 +52,8 @@ export function useEficienciaComercial(filtros: EficienciaFiltros) {
       dataDe: filtros.dataDe,
       dataAte: filtros.dataAte,
       responsavel: filtros.responsavel,
+      lead: filtros.lead,
+      tipo: filtros.tipo,
     })
       .then((r) => setDados(r))
       .catch(() => setErro('Não foi possível calcular os indicadores.'))
