@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T23:01:36.279Z",
+  "generatedAt": "2026-11-19T23:15:24.881Z",
   "collections": [
     {
       "name": "users",
@@ -1167,6 +1167,64 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_metas_ano_mes_kpi ON metas (ano, mes, kpi)"]
+    },
+    {
+      "name": "assistente_logs",
+      "type": "base",
+      "apiRules": {
+        "list": null,
+        "view": null,
+        "create": null,
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "usuario_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "modelo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "tokens",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "latencia_ms",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "erro",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_assistente_logs_usuario ON assistente_logs (usuario_id)"]
     }
   ]
 }

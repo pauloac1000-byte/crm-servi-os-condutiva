@@ -2,14 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { X, Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { perguntarAssistente } from '@/services/assistente'
 
-// Casca de UI do assistente de IA do CRM — SEM nenhuma IA conectada ainda.
-// Painel lateral fixo à direita (400px) que SOBREPÕE o conteúdo (position fixed,
-// não empurra o layout) e vira tela cheia abaixo de 768px (md).
-// A resposta é sempre a frase fixa; nenhum chamada de rede, nenhuma API.
-
-const RESPOSTA_FIXA = 'Assistente ainda não conectado.'
-const DELAY_PENSANDO_MS = 600
+// Assistente de IA do CRM. Painel lateral fixo à direita (400px) que SOBREPÕE o
+// conteúdo (position fixed, não empurra o layout) e vira tela cheia abaixo de 768px (md).
+// A pergunta vai à rota de servidor /api/assistente-ia (a chave fica no backend).
 
 interface Mensagem {
   id: number
@@ -32,7 +29,6 @@ export default function PainelAssistente({ aberto, onFechar }: Props) {
   const [pensando, setPensando] = useState(false)
   const fimRef = useRef<HTMLDivElement>(null)
   const campoRef = useRef<HTMLInputElement>(null)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const proximoId = useRef(1)
 
   // rolar para a última mensagem
@@ -49,37 +45,38 @@ export default function PainelAssistente({ aberto, onFechar }: Props) {
     return undefined
   }, [aberto])
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
-
   if (!aberto) return null
 
-  const enviar = () => {
+  const enviar = async () => {
     const pergunta = texto.trim()
     if (!pergunta || pensando) return
 
     const idPergunta = proximoId.current++
+    const idResposta = idPergunta + 1
     setMensagens((atual) => [
       ...atual,
       { id: idPergunta, papel: 'usuario', texto: pergunta },
       // placeholder "pensando" que será substituído pela resposta
-      { id: idPergunta + 1, papel: 'assistente', texto: '', pendente: true },
+      { id: idResposta, papel: 'assistente', texto: '', pendente: true },
     ])
     setTexto('')
     setPensando(true)
+    proximoId.current = idResposta + 1
 
-    timeoutRef.current = setTimeout(() => {
+    try {
+      const resposta = await perguntarAssistente(pergunta)
       setMensagens((atual) =>
-        atual.map((m) =>
-          m.id === idPergunta + 1 ? { ...m, texto: RESPOSTA_FIXA, pendente: false } : m,
-        ),
+        atual.map((m) => (m.id === idResposta ? { ...m, texto: resposta, pendente: false } : m)),
       )
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Não foi possível obter resposta do assistente.'
+      setMensagens((atual) =>
+        atual.map((m) => (m.id === idResposta ? { ...m, texto: msg, pendente: false } : m)),
+      )
+    } finally {
       setPensando(false)
-      timeoutRef.current = null
-    }, DELAY_PENSANDO_MS)
+    }
   }
 
   return (
@@ -164,7 +161,9 @@ export default function PainelAssistente({ aberto, onFechar }: Props) {
             Enviar
           </Button>
         </form>
-        <p className="mt-2 text-[11px] text-slate-400">Nenhuma IA conectada ainda.</p>
+        <p className="mt-2 text-[11px] text-slate-400">
+          As perguntas são enviadas ao assistente de IA configurado.
+        </p>
       </div>
     </div>
   )
