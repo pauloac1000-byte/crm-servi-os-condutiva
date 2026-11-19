@@ -15,6 +15,8 @@ import { useMarcoValidacao } from '@/hooks/use-marco-validacao'
 import { MetaKpi } from '@/types/crm'
 import { toast } from 'sonner'
 import { Flag } from 'lucide-react'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
 
 export default function Metas() {
   const { isAdmin } = useAuth()
@@ -110,18 +112,67 @@ export default function Metas() {
             {!isAdmin && ' — somente leitura (edição restrita ao administrador)'}
           </p>
         </div>
-        <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-          <SelectTrigger className="w-full sm:w-32 bg-white">
-            <SelectValue placeholder="Ano" />
-          </SelectTrigger>
-          <SelectContent>
-            {anos.map((a) => (
-              <SelectItem key={a} value={String(a)}>
-                {a}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+            <SelectTrigger className="w-full sm:w-32 bg-white">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {anos.map((a) => (
+                <SelectItem key={a} value={String(a)}>
+                  {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <BotaoExportarPdf
+            aoGerar={async () => {
+              // valores lidos no clique: nada de recarregar a página nem perder
+              // o ano selecionado ou a célula em edição
+              const colunas = ['Indicador', 'Ano', ...MESES_CURTOS]
+              const kpisComMetaAnual = KPIS.filter((k) => getValor(k.kpi, 0) !== undefined).length
+              const kpisDivergentes = KPIS.filter((k) => temDivergencia(k.kpi)).length
+
+              const linhas = KPIS.map(({ kpi, rotulo, formato }) => [
+                temDivergencia(kpi) ? `${rotulo} ⚠ divergente` : rotulo,
+                formatarValor(kpi, getValor(kpi, 0)),
+                ...Array.from({ length: 12 }, (_, i) => formatarValor(kpi, getValor(kpi, i + 1))),
+              ])
+
+              const resumo: PdfSessao[] = [
+                {
+                  titulo: 'Resumo',
+                  linhas: [
+                    { header: 'Ano selecionado', valor: String(ano) },
+                    { header: 'KPIs com meta anual definida', valor: String(kpisComMetaAnual) },
+                    { header: 'KPIs divergentes', valor: String(kpisDivergentes) },
+                  ],
+                },
+                {
+                  titulo: 'Marco de validação do modelo',
+                  linhas: [
+                    {
+                      header: 'Primeiro contrato piloto assinado com RCS maior que zero',
+                      valor: marco.concluido
+                        ? `Concluído${marco.contrato?.cliente ? ` — ${marco.contrato.cliente}` : ''}`
+                        : 'Pendente',
+                    },
+                  ],
+                },
+              ]
+
+              await gerarPdfPadrao({
+                titulo: 'Metas',
+                filtros: [`Ano: ${ano}`],
+                resumo,
+                colunas,
+                linhas,
+                prefixoArquivo: 'metas',
+                orientacao: 'landscape',
+              })
+            }}
+          />
+        </div>
       </div>
 
       {/* Grade: meses nas colunas, KPIs nas linhas */}
