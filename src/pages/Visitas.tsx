@@ -271,7 +271,7 @@ export default function Visitas() {
                 colunas,
                 linhas,
                 prefixoArquivo: 'visitas',
-                orientacao: 'paisagem',
+                orientacao: 'landscape',
               })
             }}
           />

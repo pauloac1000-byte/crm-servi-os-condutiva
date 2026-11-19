@@ -203,7 +203,7 @@ export default function Contratos() {
                 colunas,
                 linhas,
                 prefixoArquivo: 'contratos',
-                orientacao: 'paisagem',
+                orientacao: 'landscape',
               })
             }}
           />
