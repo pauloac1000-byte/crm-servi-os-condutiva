@@ -1,3 +1,5 @@
+import { jsPDF } from 'jspdf'
+import autoTable, { type UserOptions } from 'jspdf-autotable'
 import { calcularKpis, ROTULOS_KPIS, type KpisPeriodo, type KpiSituacao } from '@/services/kpis'
 import { calcularFunil, type FunilPeriodo } from '@/services/funil'
 import {
@@ -10,8 +12,8 @@ import {
 
 // Gerador do RELATÓRIO EM PDF do Dashboard (botão "Exportar").
 //
-// Geração client-side com jsPDF + jspdf-autotable (import dinâmico — as libs
-// não estão no package.json; os tipos vêm do stub src/types/jspdf.d.ts).
+// Geração client-side com jsPDF + jspdf-autotable (dependências do package.json,
+// import estático — o Vite empacota as libs no bundle do navegador).
 //
 // Formato pedido: UMA PÁGINA com os cinco KPIs, o funil e o bloco de metas do
 // período/responsável filtrado, identificando o período, a data de emissão e o
@@ -98,7 +100,7 @@ const fmtDataBR = (iso: string) => {
 
 // ---------- helpers de desenho ----------
 
-type Doc = import('jspdf').jsPDF
+type Doc = jsPDF
 
 const MARGEM = 14
 const LARGURA_UTIL = 210 - MARGEM * 2
@@ -253,16 +255,9 @@ function secaoMetas(doc: Doc, y0: number, metas: MetasAcompanhamento): number {
   return finalYDe(doc, y) + 8
 }
 
-// Importa o autotable dinamicamente (mesma forma do jsPDF) e desenha a tabela
-let autoTableFn: ((doc: Doc, opcoes: Record<string, unknown>) => void) | null = null
-async function autoTableTabela(doc: Doc, opcoes: Record<string, unknown>) {
-  if (!autoTableFn) {
-    const mod = (await import(/* @vite-ignore */ 'jspdf-autotable')) as unknown as {
-      autoTable?: (doc: Doc, opcoes: Record<string, unknown>) => void
-    }
-    autoTableFn = mod.autoTable ?? (mod as unknown as (d: Doc, o: Record<string, unknown>) => void)
-  }
-  autoTableFn(doc, opcoes)
+// Desenha a tabela com o autotable (import estático, tipagem real do pacote)
+function autoTableTabela(doc: Doc, opcoes: Record<string, unknown>) {
+  autoTable(doc, opcoes as unknown as UserOptions)
 }
 
 // ---------- função central ----------
@@ -293,9 +288,6 @@ export async function gerarRelatorioDashboardPdf(
     }),
   ])
 
-  const { jsPDF } = (await import(/* @vite-ignore */ 'jspdf')) as unknown as {
-    jsPDF: new (o?: Record<string, unknown>) => Doc
-  }
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
   // --- cabeçalho ---

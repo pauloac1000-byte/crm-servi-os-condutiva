@@ -1,12 +1,14 @@
 // Motor de PDF do relatório padrão ("Exportar PDF") — mesma identidade visual
 // do gerador do Dashboard (src/services/relatorio-pdf.ts): jspdf/jspdf-autotable
-// via import dinâmico, tipos pelo stub src/types/jspdf.d.ts. Nada de
-// dependências novas no package.json.
+// (dependências do package.json, import estático — o Vite empacota as libs no
+// bundle do navegador).
 //
 // Formato: cabeçalho (página, data/hora, usuário, filtros ativos), bloco de
 // resumo com os números principais da tela, tabela com os registros exibidos
 // (mesmas colunas visíveis) e rodapé com identificação do sistema e numeração
 // de páginas quando passar de uma folha.
+import { jsPDF } from 'jspdf'
+import autoTable, { type UserOptions } from 'jspdf-autotable'
 import pb from '@/lib/pocketbase/client'
 
 export interface PdfLinha {
@@ -55,7 +57,7 @@ const FONTE_NUM = 'courier'
 const MARGEM = 14
 const LARGURA_UTIL = 210 - MARGEM * 2
 
-type Doc = import('jspdf').jsPDF
+type Doc = jsPDF
 
 // Título de seção com marca lime à esquerda
 function secao(doc: Doc, y: number, titulo: string): number {
@@ -112,22 +114,12 @@ const estiloTabela = () => ({
 const finalYDe = (doc: Doc, fallback: number) =>
   (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? fallback
 
-// Importa o autotable dinamicamente (mesma forma do jsPDF) e desenha a tabela
-let autoTableFn: ((doc: Doc, opcoes: Record<string, unknown>) => void) | null = null
-async function autoTableTabela(doc: Doc, opcoes: Record<string, unknown>) {
-  if (!autoTableFn) {
-    const mod = (await import(/* @vite-ignore */ 'jspdf-autotable')) as unknown as {
-      autoTable?: (doc: Doc, opcoes: Record<string, unknown>) => void
-    }
-    autoTableFn = mod.autoTable ?? (mod as unknown as (d: Doc, o: Record<string, unknown>) => void)
-  }
-  autoTableFn(doc, opcoes)
+// Desenha a tabela com o autotable (import estático, tipagem real do pacote)
+function autoTableTabela(doc: Doc, opcoes: Record<string, unknown>) {
+  autoTable(doc, opcoes as unknown as UserOptions)
 }
 
 export async function gerarPdfPadrao(opcoes: PdfOpcoes): Promise<void> {
-  const { jsPDF } = (await import(/* @vite-ignore */ 'jspdf')) as unknown as {
-    jsPDF: new (o?: Record<string, unknown>) => Doc
-  }
   const orientacao = opcoes.orientacao ?? 'portrait'
   const doc = new jsPDF({ orientation: orientacao, unit: 'mm', format: 'a4' })
   // largura útil e posição do rodapé conforme a orientação
