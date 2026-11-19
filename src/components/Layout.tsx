@@ -9,6 +9,7 @@ import { getContacts } from '@/services/contacts'
 import { Deal, Contact } from '@/types/crm'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
 import { ContactDetailDrawer } from '@/components/ContactDetailDrawer'
+import { AssistenteFlutuante } from '@/components/AssistenteFlutuante'
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -79,6 +80,8 @@ export default function Layout() {
         onClose={() => setSelectedContact(null)}
         onUpdated={loadGlobalData}
       />
+
+      <AssistenteFlutuante />
     </div>
   )
 }
