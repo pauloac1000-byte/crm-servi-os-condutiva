@@ -1,4 +1,4 @@
-// pb_hooks — rota POST /api/assistente-ia (assistente de IA do CRM).
+// pb_hooks — rota POST /backend/v1/assistente-ia (assistente de IA do CRM).
 //
 // Recebe { pergunta }, chama o provedor (API compatível com OpenAI) em
 // IA_BASE_URL + /chat/completions com IA_API_KEY e IA_MODELO (lidos por nome,
@@ -11,7 +11,7 @@
 
 routerAdd(
   'POST',
-  '/api/assistente-ia',
+  '/backend/v1/assistente-ia',
   (e) => {
     const inicio = Date.now()
     const TIMEOUT_SEGUNDOS = 20

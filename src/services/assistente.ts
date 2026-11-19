@@ -1,12 +1,12 @@
 import pb from '@/lib/pocketbase/client'
 
-// Chamada à rota de servidor POST /api/assistente-ia (a chave da IA fica no backend).
+// Chamada à rota de servidor POST /backend/v1/assistente-ia (a chave da IA fica no backend).
 // Envia somente a pergunta digitada — nenhum dado do CRM nesta etapa.
 const MSG_PADRAO = 'Não foi possível obter resposta do assistente. Tente novamente.'
 
 export async function perguntarAssistente(pergunta: string): Promise<string> {
   try {
-    const data = await pb.send('/api/assistente-ia', {
+    const data = await pb.send('/backend/v1/assistente-ia', {
       method: 'POST',
       body: { pergunta },
     })

@@ -6,7 +6,7 @@ import { perguntarAssistente } from '@/services/assistente'
 
 // Assistente de IA do CRM. Painel lateral fixo à direita (400px) que SOBREPÕE o
 // conteúdo (position fixed, não empurra o layout) e vira tela cheia abaixo de 768px (md).
-// A pergunta vai à rota de servidor /api/assistente-ia (a chave fica no backend).
+// A pergunta vai à rota de servidor /backend/v1/assistente-ia (a chave fica no backend).
 
 interface Mensagem {
   id: number
