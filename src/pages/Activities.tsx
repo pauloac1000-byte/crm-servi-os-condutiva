@@ -18,6 +18,8 @@ import {
   Briefcase,
 } from 'lucide-react'
 import { ActivityModal } from '@/components/ActivityModal'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
 
@@ -193,15 +195,48 @@ export default function Activities() {
             Agendamentos, ligações e acompanhamento de clientes
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setActivityToEdit(null)
-            setActivityModalOpen(true)
-          }}
-          className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Nova Atividade
-        </Button>
+        <div className="flex items-center gap-2">
+          <BotaoExportarPdf
+            aoGerar={async () => {
+              const resumo: PdfSessao[] = [
+                {
+                  titulo: 'Resumo',
+                  linhas: [
+                    { header: 'Total de atividades', valor: String(activities.length) },
+                    { header: 'Pendentes', valor: String(pending.length) },
+                    { header: 'Concluídas', valor: String(completed.length) },
+                  ],
+                },
+              ]
+              const colunas = ['Atividade', 'Tipo', 'Contato', 'Negócio', 'Prazo', 'Status']
+              const linhas = activities.map((a) => [
+                a.title,
+                a.type,
+                a.expand?.contact?.name || '—',
+                a.expand?.deal?.title || '—',
+                a.due_date ? new Date(a.due_date).toLocaleDateString('pt-BR') : '—',
+                a.status,
+              ])
+              await gerarPdfPadrao({
+                titulo: 'Atividades & Tarefas',
+                filtros: [],
+                resumo,
+                colunas,
+                linhas,
+                prefixoArquivo: 'atividades',
+              })
+            }}
+          />
+          <Button
+            onClick={() => {
+              setActivityToEdit(null)
+              setActivityModalOpen(true)
+            }}
+            className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Nova Atividade
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">

@@ -45,6 +45,8 @@ import {
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
 import { TrendingUp } from 'lucide-react'
 
 export default function Visitas() {
@@ -204,6 +206,75 @@ export default function Visitas() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <BotaoExportarPdf
+            aoGerar={async () => {
+              const pendentes = visitasFiltradas.filter((v) => (v.resultado || '') === 'pendente')
+              const concluidas = visitasFiltradas.filter((v) => (v.resultado || '') === 'concluida')
+              const resumo: PdfSessao[] = [
+                {
+                  titulo: 'Resumo',
+                  linhas: [
+                    { header: 'Total de visitas', valor: String(visitasFiltradas.length) },
+                    { header: 'Pendentes', valor: String(pendentes.length) },
+                    { header: 'Concluídas', valor: String(concluidas.length) },
+                    { header: 'Custo total no período', valor: formatCurrency(custoTotalPeriodo) },
+                  ],
+                },
+              ]
+              const colunas = [
+                'Data',
+                'Empresa',
+                'Contato',
+                'Tipo',
+                'Responsável',
+                'KM rodados',
+                'Horas dedicadas',
+                'Combustível (R$)',
+                'Pedágio (R$)',
+                'Alimentação (R$)',
+                'Hospedagem (R$)',
+                'Outros custos (R$)',
+                'Custo total (R$)',
+                'Resultado',
+              ]
+              const linhas = visitasFiltradas.map((v) => [
+                v.data ? v.data.replace('T', ' ').slice(0, 16) : '—',
+                tituloVisita(v) || '—',
+                v.expand?.contato?.name || '—',
+                v.tipo === 'presencial' ? 'Presencial' : v.tipo === 'remota' ? 'Remota' : '—',
+                nomeResponsavel(v) || '—',
+                v.km_rodados != null ? String(v.km_rodados) : '—',
+                v.horas_dedicadas != null ? String(v.horas_dedicadas) : '—',
+                formatCurrency(v.valor_combustivel || 0),
+                formatCurrency(v.pedagio || 0),
+                formatCurrency(v.alimentacao || 0),
+                formatCurrency(v.hospedagem || 0),
+                formatCurrency(v.outros_custos || 0),
+                formatCurrency(v.custo_total || 0),
+                v.resultado || '—',
+              ])
+              const filtrosPdf: string[] = []
+              if (dataDe) filtrosPdf.push(`Período a partir de ${dataDe}`)
+              if (dataAte) filtrosPdf.push(`Período até ${dataAte}`)
+              if (responsavelFiltro !== 'todos') {
+                const u = users.find((x) => x.id === responsavelFiltro)
+                filtrosPdf.push(`Responsável: ${u?.name || u?.email || responsavelFiltro}`)
+              }
+              if (leadFiltro !== 'todos')
+                filtrosPdf.push(`Lead: ${nomeLead(leadFiltro) || leadFiltro}`)
+              if (tipoFiltro !== 'todos')
+                filtrosPdf.push(`Tipo: ${tipoFiltro === 'presencial' ? 'Presencial' : 'Remota'}`)
+              await gerarPdfPadrao({
+                titulo: 'Visitas Comerciais',
+                filtros: filtrosPdf,
+                resumo,
+                colunas,
+                linhas,
+                prefixoArquivo: 'visitas',
+                orientacao: 'paisagem',
+              })
+            }}
+          />
           {isAdmin && (
             <Button
               onClick={() => setConfigOpen(true)}

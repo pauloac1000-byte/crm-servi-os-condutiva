@@ -16,7 +16,9 @@ declare module 'jspdf' {
     setFont(font: string, style?: string): jsPDF
     setFontSize(size: number): jsPDF
     rect(x: number, y: number, w: number, h: number, style?: string): jsPDF
-    text(text: string, x: number, y: number, options?: TextOptionsLight): jsPDF
+    text(text: string | string[], x: number, y: number, options?: TextOptionsLight): jsPDF
+    getTextWidth(text: string): number
+    splitTextToSize(text: string, maxWidth: number): string[]
     save(filename?: string): jsPDF
     lastAutoTable?: { finalY: number }
   }
@@ -26,4 +28,5 @@ declare module 'jspdf' {
 declare module 'jspdf-autotable' {
   type Doc = import('jspdf').jsPDF
   export function autoTable(doc: Doc, options: Record<string, unknown>): void
+  export type UserOptions = Record<string, unknown>
 }

@@ -19,6 +19,8 @@ import { IndicadorEtapa } from '@/components/IndicadorEtapa'
 import { diasNaEtapa } from '@/lib/dias-na-etapa'
 import { valorOportunidade } from '@/lib/valor-oportunidade'
 import { ContratoModal } from '@/components/ContratoModal'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
 import { getEtapaCompromisso } from '@/lib/etapa-compromisso'
 import { Contrato } from '@/types/crm'
 
@@ -172,15 +174,72 @@ export default function Pipeline() {
             Arraste os cards para mover o lead entre as etapas
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setSelectedStageForNew(stages[0]?.id || '')
-            setDealModalOpen(true)
-          }}
-          className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
-        </Button>
+        <div className="flex items-center gap-2">
+          <BotaoExportarPdf
+            aoGerar={async () => {
+              const porEtapa = stages.map((s) => {
+                const lista = deals.filter((d) => d.etapa === s.id)
+                return {
+                  nome: s.nome,
+                  qtd: lista.length,
+                  valor: lista.reduce((sum, d) => sum + valorOportunidade(d), 0),
+                }
+              })
+              const resumo: PdfSessao[] = [
+                {
+                  titulo: 'Negócios por etapa',
+                  linhas: porEtapa.map((e) => ({
+                    header: `${e.nome} (${e.qtd})`,
+                    valor: formatCurrency(e.valor),
+                  })),
+                },
+                {
+                  titulo: 'Resumo',
+                  linhas: [
+                    { header: 'Total de negócios', valor: String(deals.length) },
+                    {
+                      header: 'Valor total do funil',
+                      valor: formatCurrency(
+                        deals.reduce((sum, d) => sum + valorOportunidade(d), 0),
+                      ),
+                    },
+                  ],
+                },
+              ]
+              const colunas = ['Negócio', 'Etapa', 'Contato', 'Prioridade', 'Valor', 'Previsão']
+              const linhas = deals.map((d) => {
+                const stage = stages.find((s) => s.id === d.etapa)
+                return [
+                  d.title,
+                  stage?.nome || '—',
+                  d.expand?.contact?.name || '—',
+                  d.priority || '—',
+                  formatCurrency(valorOportunidade(d)),
+                  d.expected_close_date
+                    ? new Date(d.expected_close_date).toLocaleDateString('pt-BR')
+                    : '—',
+                ]
+              })
+              await gerarPdfPadrao({
+                titulo: 'Pipeline de Vendas',
+                filtros: [],
+                resumo,
+                colunas,
+                linhas,
+                prefixoArquivo: 'pipeline',
+              })
+            }}
+          />
+          <Button
+            onClick={() => {
+              setSelectedStageForNew(stages[0]?.id || '')
+              setDealModalOpen(true)
+            }}
+            className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-6 pt-2 items-start min-h-[calc(100vh-220px)]">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getContacts, deleteContact } from '@/services/contacts'
 import { useAuth } from '@/hooks/use-auth'
 import { Contact } from '@/types/crm'
@@ -21,6 +21,8 @@ import {
 } from '@/components/ColumnFilter'
 import { Search, Plus, Trash2, Edit2, Mail, Phone, Building, MapPin, X } from 'lucide-react'
 import { ContactModal } from '@/components/ContactModal'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
 import { ContactDetailDrawer } from '@/components/ContactDetailDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
 import { compararTexto } from '@/lib/ordenacao-alfabetica'
@@ -121,6 +123,55 @@ export default function Contacts() {
     inativo: 'bg-slate-100 text-slate-600 border-slate-200',
   }
 
+  // ── Exportação PDF: filtros ativos + resumo (total e status) ──────────────
+  const filtrosAtivos = useMemo(() => {
+    const parts: string[] = []
+    if (search) parts.push(`Busca: "${search}"`)
+    if (statusFilter !== 'all') parts.push(`Status: ${statusFilter}`)
+    for (const f of filtrosColuna) {
+      if (f.valores.length > 0) {
+        const rotulo = COLUNAS_FILTRAVEIS_CONTATOS.find((c) => c.id === f.id)?.rotulo ?? f.id
+        parts.push(`${rotulo}: ${f.valores.join(', ')}`)
+      }
+    }
+    return parts
+  }, [search, statusFilter, filtrosColuna])
+
+  const handleExportarPdf = async () => {
+    const porStatus: Record<string, number> = {}
+    for (const c of filteredContacts) porStatus[c.status] = (porStatus[c.status] || 0) + 1
+    const resumo: PdfSessao[] = [
+      {
+        titulo: 'Resumo',
+        linhas: [
+          { header: 'Total de contatos', valor: String(filteredContacts.length) },
+          { header: 'Clientes', valor: String(porStatus['cliente'] ?? 0) },
+          { header: 'Prospects', valor: String(porStatus['prospect'] ?? 0) },
+          { header: 'Leads', valor: String(porStatus['lead'] ?? 0) },
+          { header: 'Inativos', valor: String(porStatus['inativo'] ?? 0) },
+        ],
+      },
+    ]
+
+    const colunas = ['Nome', 'Empresa / Cargo', 'E-mail', 'Telefone', 'Status']
+    const linhas = filteredContacts.map((c) => [
+      c.name,
+      [c.company, c.role].filter(Boolean).join(' — ') || '—',
+      c.email || '—',
+      c.phone || '—',
+      c.status || '—',
+    ])
+
+    await gerarPdfPadrao({
+      titulo: 'Gestão de Contatos',
+      filtros: filtrosAtivos,
+      resumo,
+      colunas,
+      linhas,
+      prefixoArquivo: 'contatos',
+    })
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -128,15 +179,18 @@ export default function Contacts() {
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Gestão de Contatos</h2>
           <p className="text-sm text-slate-500">Base centralizada de clientes e prospectos</p>
         </div>
-        <Button
-          onClick={() => {
-            setContactToEdit(null)
-            setContactModalOpen(true)
-          }}
-          className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Novo Contato
-        </Button>
+        <div className="flex items-center gap-2">
+          <BotaoExportarPdf aoGerar={handleExportarPdf} />
+          <Button
+            onClick={() => {
+              setContactToEdit(null)
+              setContactModalOpen(true)
+            }}
+            className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Novo Contato
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">

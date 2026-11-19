@@ -22,6 +22,8 @@ import { ContratoModal } from '@/components/ContratoModal'
 import { MovimentoReceitaModal } from '@/components/MovimentoReceitaModal'
 import { ContratoOsDrawer } from '@/components/ContratoOsDrawer'
 import { useRealtime } from '@/hooks/use-realtime'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
 import { toast } from 'sonner'
 
 export default function Contratos() {
@@ -135,6 +137,76 @@ export default function Contratos() {
           <p className="text-sm text-slate-500">Receita contratada da unidade de serviços</p>
         </div>
         <div className="flex items-center gap-2">
+          <BotaoExportarPdf
+            aoGerar={async () => {
+              const porSituacao: Record<string, number> = {}
+              let valorTotal = 0
+              for (const c of filtered) {
+                const s = c.status || 'sem status'
+                porSituacao[s] = (porSituacao[s] || 0) + 1
+                valorTotal += c.valor_mensal || 0
+              }
+              const rotulos: Record<string, string> = {
+                ativo: 'Ativos',
+                suspenso: 'Suspensos',
+                encerrado: 'Encerrados',
+              }
+              const resumo: PdfSessao[] = [
+                {
+                  titulo: 'Resumo',
+                  linhas: [
+                    { header: 'Total de contratos', valor: String(filtered.length) },
+                    {
+                      header: 'Valor mensal somado',
+                      valor: formatCurrency(valorTotal),
+                    },
+                    ...Object.entries(porSituacao).map(([s, qtd]) => ({
+                      header: rotulos[s] || s,
+                      valor: String(qtd),
+                    })),
+                  ],
+                },
+              ]
+              const colunas = [
+                'Cliente',
+                'Lead de origem',
+                'Plano',
+                'Tipo',
+                'Status',
+                'Valor mensal (R$)',
+                'Data de início',
+                'Data de fim',
+                'Responsável',
+                'Observações',
+              ]
+              const linhas = filtered.map((c) => [
+                c.expand?.cliente?.name || '—',
+                c.expand?.negocio?.title || '—',
+                c.expand?.plano?.nome || '—',
+                c.tipo || '—',
+                c.status || '—',
+                formatCurrency(c.valor_mensal || 0),
+                c.data_inicio ? new Date(c.data_inicio).toLocaleDateString('pt-BR') : '—',
+                c.data_fim ? new Date(c.data_fim).toLocaleDateString('pt-BR') : '—',
+                c.expand?.responsavel?.name || c.expand?.responsavel?.email || '—',
+                c.informacoes_plano || '—',
+              ])
+              const filtrosAtivos: string[] = []
+              if (search) filtrosAtivos.push(`Busca: "${search}"`)
+              if (statusFilter !== 'all') filtrosAtivos.push(`Status: ${statusFilter}`)
+              if (dataInicio) filtrosAtivos.push(`Início a partir de ${dataInicio}`)
+              if (dataFim) filtrosAtivos.push(`Início até ${dataFim}`)
+              await gerarPdfPadrao({
+                titulo: 'Contratos',
+                filtros: filtrosAtivos,
+                resumo,
+                colunas,
+                linhas,
+                prefixoArquivo: 'contratos',
+                orientacao: 'paisagem',
+              })
+            }}
+          />
           <Button
             onClick={() => {
               setCompetenciaModal(undefined)

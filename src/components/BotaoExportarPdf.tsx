@@ -1,40 +1,37 @@
 import { useState } from 'react'
-import { FileDown, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { FileDown, Loader2 } from 'lucide-react'
 
-/**
- * Botão padrão "Exportar PDF" — mesma pegada visual dos demais botões
- * outline do sistema. Página e relatório são definidos por quem o usa.
- */
-export function BotaoExportarPdf({
-  aoExportar,
-  className = 'font-semibold text-xs h-10',
-  rotulo = 'Exportar PDF',
-}: {
-  aoExportar: () => Promise<void> | void
+interface Props {
+  aoGerar: () => Promise<void>
   className?: string
-  rotulo?: string
-}) {
+}
+
+// Botão padrão "Exportar PDF" das páginas do CRM (Leads, Contatos, Atividades,
+// Pipeline, Visitas, Contratos). Mantém o estado da tela: só aguarda a geração.
+export function BotaoExportarPdf({ aoGerar, className }: Props) {
   const [gerando, setGerando] = useState(false)
 
-  const executar = async () => {
-    if (gerando) return
-    setGerando(true)
-    try {
-      await aoExportar()
-    } finally {
-      setGerando(false)
-    }
-  }
-
   return (
-    <Button onClick={executar} variant="outline" className={className} disabled={gerando}>
+    <Button
+      variant="outline"
+      className={`font-semibold text-xs h-10 ${className ?? ''}`}
+      disabled={gerando}
+      onClick={async () => {
+        setGerando(true)
+        try {
+          await aoGerar()
+        } finally {
+          setGerando(false)
+        }
+      }}
+    >
       {gerando ? (
         <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
       ) : (
         <FileDown className="mr-1.5 h-4 w-4" />
       )}
-      {rotulo}
+      {gerando ? 'Gerando…' : 'Exportar PDF'}
     </Button>
   )
 }

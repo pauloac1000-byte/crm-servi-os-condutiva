@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
 import { getDeals, deleteDeal } from '@/services/deals'
-import { getPipelineStages } from '@/services/pipeline_stages'
 import { getContacts } from '@/services/contacts'
-import { Deal, EtapaFunil, Contact, DealStatus } from '@/types/crm'
-import { useAuth } from '@/hooks/use-auth'
+import { getPipelineStages } from '@/services/pipeline_stages'
+import { Contact, Deal, EtapaFunil } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,36 +20,37 @@ import {
   type ColunaFiltravelId,
   type FiltroColuna,
 } from '@/components/ColumnFilter'
-import { Search, Plus, Trash2, Edit2, Download, X } from 'lucide-react'
-import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
+import { Search, Plus, Trash2, Edit2, Download, User as UserIcon, X } from 'lucide-react'
 import { DealModal } from '@/components/DealModal'
 import { DealDetailDrawer } from '@/components/DealDetailDrawer'
+import { BotaoExportarPdf } from '@/components/BotaoExportarPdf'
+import { gerarPdfPadrao, type PdfSessao } from '@/lib/pdf-generico'
+import { baixarCsv, linhaCsv, montarCsv, nomeArquivoCsv } from '@/lib/exportar-csv'
+import { useAuth } from '@/hooks/use-auth'
 import { useRealtime } from '@/hooks/use-realtime'
 import { compararTexto } from '@/lib/ordenacao-alfabetica'
 import { toast } from 'sonner'
 
 export default function Deals() {
   const { isAdmin } = useAuth()
-  const [searchParams, setSearchParams] = useSearchParams()
   const [deals, setDeals] = useState<Deal[]>([])
-  const [stages, setStages] = useState<EtapaFunil[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [stages, setStages] = useState<EtapaFunil[]>([])
   const [search, setSearch] = useState('')
-  const [stageFilter, setStageFilter] = useState<string>('all')
-  const [priorityFilter, setPriorityFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [dealModalOpen, setDealModalOpen] = useState(false)
   const [dealToEdit, setDealToEdit] = useState<Deal | null>(null)
-  const [selectedDealDetail, setSelectedDealDetail] = useState<Deal | null>(null)
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
   const [filtrosColuna, setFiltrosColuna] = useState<FiltroColuna[]>(
     COLUNAS_FILTRAVEIS.map((c) => ({ id: c.id, valores: [] })),
   )
 
   const loadData = async () => {
     try {
-      const [d, s, c] = await Promise.all([getDeals(), getPipelineStages(), getContacts()])
+      const [d, c, s] = await Promise.all([getDeals(), getContacts(), getPipelineStages()])
       setDeals(d)
-      setStages(s)
       setContacts(c)
+      setStages(s)
     } catch {
       /* intentionally ignored */
     }
@@ -62,18 +61,6 @@ export default function Deals() {
   }, [])
 
   useRealtime('deals', () => loadData())
-
-  // Deep-link do Dashboard ("Precisa de ação"): ?deal=<id> abre o drawer de
-  // detalhes do negócio (mesmo drawer usado na própria lista).
-  useEffect(() => {
-    const dealId = searchParams.get('deal')
-    if (!dealId || deals.length === 0) return
-    const deal = deals.find((d) => d.id === dealId)
-    if (deal) {
-      setSelectedDealDetail(deal)
-      setSearchParams({}, { replace: true })
-    }
-  }, [searchParams, deals])
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -88,7 +75,6 @@ export default function Deals() {
     }
   }
 
-  // Filtro por coluna (seleção múltipla): coluna sem seleção = sem filtro
   const valorColuna = (deal: Deal, id: ColunaFiltravelId): string => {
     switch (id) {
       case 'titulo':
@@ -96,7 +82,7 @@ export default function Deals() {
       case 'contato':
         return deal.expand?.contact?.name || 'N/A'
       case 'etapa':
-        return deal.expand?.etapa?.nome || deal.expand?.stage?.name || ''
+        return stages.find((s) => s.id === deal.etapa)?.nome || 'N/A'
       case 'prioridade':
         return deal.priority
       case 'previsao':
@@ -108,90 +94,141 @@ export default function Deals() {
     }
   }
 
-  const filteredDeals = deals.filter((deal) => {
-    const matchesSearch =
-      deal.title.toLowerCase().includes(search.toLowerCase()) ||
-      (deal.expand?.contact?.name || '').toLowerCase().includes(search.toLowerCase())
-    const matchesStage = stageFilter === 'all' || deal.etapa === stageFilter
-    const matchesPriority = priorityFilter === 'all' || deal.priority === priorityFilter
-
-    const matchesColunas = filtrosColuna.every((f) => {
-      if (f.valores.length === 0) return true
-      return f.valores.includes(valorColuna(deal, f.id))
+  const filteredDeals = useMemo(() => {
+    const arr = deals.filter((d) => {
+      const matchesSearch =
+        d.title.toLowerCase().includes(search.toLowerCase()) ||
+        (d.expand?.contact?.name || '').toLowerCase().includes(search.toLowerCase())
+      const matchesStatus = statusFilter === 'all' || d.status === statusFilter
+      const matchesColunas = filtrosColuna.every((f) => {
+        if (f.valores.length === 0) return true
+        return f.valores.includes(valorColuna(d, f.id))
+      })
+      return matchesSearch && matchesStatus && matchesColunas
     })
-
-    return matchesSearch && matchesStage && matchesPriority && matchesColunas
-  })
-  // Ordem inicial: título de A a Z (sem acentos e maiúsculas)
-  filteredDeals.sort((a, b) => compararTexto(a.title, b.title))
+    // Ordem inicial: título de A a Z (sem acentos e maiúsculas)
+    arr.sort((a, b) => compararTexto(a.title, b.title))
+    return arr
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deals, search, statusFilter, filtrosColuna, stages])
 
   const limparFiltros = () => {
     setSearch('')
-    setStageFilter('all')
-    setPriorityFilter('all')
+    setStatusFilter('all')
     setFiltrosColuna((atual) => atual.map((f) => ({ ...f, valores: [] })))
   }
   const temFiltroAtivo =
-    search !== '' ||
-    stageFilter !== 'all' ||
-    priorityFilter !== 'all' ||
-    filtrosColuna.some((f) => f.valores.length > 0)
+    search !== '' || statusFilter !== 'all' || filtrosColuna.some((f) => f.valores.length > 0)
+
+  // ── Exportação PDF: descrição dos filtros ativos na tela ──────────────────
+  const rotulosEtapa: Record<string, string> = useMemo(
+    () => Object.fromEntries(stages.map((s) => [s.id, s.nome])),
+    [stages],
+  )
+  const filtrosAtivos = useMemo(() => {
+    const parts: string[] = []
+    if (search) parts.push(`Busca: "${search}"`)
+    if (statusFilter !== 'all') parts.push(`Status: ${statusFilter}`)
+    for (const f of filtrosColuna) {
+      if (f.valores.length > 0) {
+        const rotulo = COLUNAS_FILTRAVEIS.find((c) => c.id === f.id)?.rotulo ?? f.id
+        parts.push(`${rotulo}: ${f.valores.join(', ')}`)
+      }
+    }
+    return parts
+  }, [search, statusFilter, filtrosColuna])
+
+  const handleExportarPdf = async () => {
+    // Resumo: total + distribuição por status
+    const porStatus: Record<string, number> = {}
+    for (const d of filteredDeals) porStatus[d.status] = (porStatus[d.status] || 0) + 1
+    const totalEtapas = filteredDeals.length
+    const resumo: PdfSessao[] = [
+      {
+        titulo: 'Resumo',
+        linhas: [
+          { header: 'Total de leads', valor: String(totalEtapas) },
+          { header: 'Em andamento', valor: String(porStatus['em andamento'] ?? 0) },
+          { header: 'Ganhos', valor: String(porStatus['ganho'] ?? 0) },
+          { header: 'Perdidos', valor: String(porStatus['perdido'] ?? 0) },
+        ],
+      },
+    ]
+
+    const colunas = ['Título', 'Contato', 'Etapa', 'Prioridade', 'Previsão', 'Status']
+    const linhas = filteredDeals.map((d) => [
+      d.title,
+      d.expand?.contact?.name || '—',
+      rotulosEtapa[d.etapa] || '—',
+      d.priority || '—',
+      d.expected_close_date ? new Date(d.expected_close_date).toLocaleDateString('pt-BR') : '—',
+      d.status || '—',
+    ])
+
+    await gerarPdfPadrao({
+      titulo: 'Lista de Leads',
+      filtros: filtrosAtivos,
+      resumo,
+      colunas,
+      linhas,
+      prefixoArquivo: 'lista-leads',
+    })
+  }
+
+  const statusColors: Record<string, string> = {
+    'em andamento': 'bg-teal-50 text-teal-700 border-teal-200',
+    ganho: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    perdido: 'bg-rose-50 text-rose-700 border-rose-200',
+  }
+  const statusLabels: Record<string, string> = {
+    'em andamento': 'EM ANDAMENTO',
+    ganho: 'GANHO',
+    perdido: 'PERDIDO',
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Lista de Leads</h2>
-          <p className="text-sm text-slate-500">Gestão detalhada de todas as oportunidades</p>
+          <p className="text-sm text-slate-500">Todos os leads cadastrados no funil</p>
         </div>
-        <Button
-          onClick={() => {
-            setDealToEdit(null)
-            setDealModalOpen(true)
-          }}
-          className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
-        >
-          <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
-        </Button>
-        <Button
-          onClick={() =>
-            baixarCsv(
-              nomeArquivoCsv('negocios'),
-              montarCsv(
-                [
-                  'Título',
-                  'Empresa',
-                  'Cidade',
-                  'Estado',
-                  'Contato',
-                  'Etapa',
-                  'Prioridade',
-                  'Previsão de fechamento',
-                  'Responsável',
-                  'Criado em',
-                ],
-                filteredDeals.map((deal) =>
-                  linhaCsv([
-                    { valor: deal.title },
-                    { valor: deal.empresa },
-                    { valor: deal.cidade },
-                    { valor: deal.estado },
-                    { valor: deal.expand?.contact?.name },
-                    { valor: deal.expand?.etapa?.nome || deal.expand?.stage?.name },
-                    { valor: deal.priority },
-                    { valor: deal.expected_close_date, tipo: { data: true } },
-                    { valor: deal.expand?.owner?.name || deal.expand?.owner?.email },
-                    { valor: deal.created, tipo: { dataHora: true } },
-                  ]),
+        <div className="flex items-center gap-2">
+          <BotaoExportarPdf aoGerar={handleExportarPdf} />
+          <Button
+            onClick={() =>
+              baixarCsv(
+                nomeArquivoCsv('leads'),
+                montarCsv(
+                  ['Título', 'Contato', 'Etapa', 'Prioridade', 'Previsão', 'Status'],
+                  filteredDeals.map((d) =>
+                    linhaCsv([
+                      { valor: d.title },
+                      { valor: d.expand?.contact?.name },
+                      { valor: rotulosEtapa[d.etapa] },
+                      { valor: d.priority },
+                      { valor: d.expected_close_date, tipo: { data: true } },
+                      { valor: d.status },
+                    ]),
+                  ),
                 ),
-              ),
-            )
-          }
-          variant="outline"
-          className="font-semibold text-xs h-10"
-        >
-          <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
-        </Button>
+              )
+            }
+            variant="outline"
+            className="font-semibold text-xs h-10"
+          >
+            <Download className="mr-1.5 h-4 w-4" /> Exportar CSV
+          </Button>
+          <Button
+            onClick={() => {
+              setDealToEdit(null)
+              setDealModalOpen(true)
+            }}
+            className="bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs h-10 shadow-md shadow-teal-700/20"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Novo Lead
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -205,33 +242,17 @@ export default function Deals() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-slate-50">
-              <SelectValue placeholder="Etapa" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as etapas</SelectItem>
-              {stages.map((st) => (
-                <SelectItem key={st.id} value={st.id}>
-                  {st.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-            <SelectTrigger className="w-full sm:w-36 bg-slate-50">
-              <SelectValue placeholder="Prioridade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas prioridades</SelectItem>
-              <SelectItem value="baixa">Baixa</SelectItem>
-              <SelectItem value="média">Média</SelectItem>
-              <SelectItem value="alta">Alta</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-44 bg-slate-50">
+            <SelectValue placeholder="Status do CRM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="em andamento">Em andamento</SelectItem>
+            <SelectItem value="ganho">Ganho</SelectItem>
+            <SelectItem value="perdido">Perdido</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -255,30 +276,89 @@ export default function Deals() {
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               <tr>
-                {COLUNAS_FILTRAVEIS.map((col) => (
-                  <th key={col.id} className="p-4">
-                    <div className="flex items-center gap-1.5">
-                      <span>{col.rotulo}</span>
-                      <ColumnFilter
-                        coluna={col.rotulo}
-                        valores={getValoresColuna(deals, valorColuna, col.id)}
-                        selecionados={filtrosColuna.find((f) => f.id === col.id)?.valores ?? []}
-                        onChange={(valores) =>
-                          setFiltrosColuna((atual) =>
-                            atual.map((f) => (f.id === col.id ? { ...f, valores } : f)),
-                          )
-                        }
-                      />
-                    </div>
-                  </th>
-                ))}
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Título</span>
+                    <ColumnFilter
+                      coluna="Título"
+                      valores={getValoresColuna(deals, valorColuna, 'titulo')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'titulo')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'titulo' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Contato</span>
+                    <ColumnFilter
+                      coluna="Contato"
+                      valores={getValoresColuna(deals, valorColuna, 'contato')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'contato')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'contato' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Etapa</span>
+                    <ColumnFilter
+                      coluna="Etapa"
+                      valores={getValoresColuna(deals, valorColuna, 'etapa')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'etapa')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'etapa' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Prioridade</span>
+                    <ColumnFilter
+                      coluna="Prioridade"
+                      valores={getValoresColuna(deals, valorColuna, 'prioridade')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'prioridade')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'prioridade' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">
+                  <div className="flex items-center gap-1.5">
+                    <span>Previsão</span>
+                    <ColumnFilter
+                      coluna="Previsão"
+                      valores={getValoresColuna(deals, valorColuna, 'previsao')}
+                      selecionados={filtrosColuna.find((f) => f.id === 'previsao')?.valores ?? []}
+                      onChange={(valores) =>
+                        setFiltrosColuna((atual) =>
+                          atual.map((f) => (f.id === 'previsao' ? { ...f, valores } : f)),
+                        )
+                      }
+                    />
+                  </div>
+                </th>
+                <th className="p-4">Status</th>
                 <th className="p-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredDeals.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-400 text-sm">
+                  <td colSpan={7} className="p-8 text-center text-slate-400 text-sm">
                     Nenhum lead encontrado com os filtros atuais.
                   </td>
                 </tr>
@@ -286,63 +366,39 @@ export default function Deals() {
                 filteredDeals.map((deal) => (
                   <tr
                     key={deal.id}
-                    onClick={() => setSelectedDealDetail(deal)}
+                    onClick={() => setSelectedDeal(deal)}
                     className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                   >
-                    <td className="p-4 font-bold text-slate-900">
-                      {deal.title}
-                      {(deal.empresa || deal.cidade || deal.estado) && (
-                        <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
-                          {[deal.empresa, [deal.cidade, deal.estado].filter(Boolean).join(' - ')]
-                            .filter(Boolean)
-                            .join(' • ')}
-                        </span>
+                    <td className="p-4 font-bold text-slate-900">{deal.title}</td>
+                    <td className="p-4 text-xs text-slate-600">
+                      {deal.expand?.contact ? (
+                        <div className="flex items-center gap-1.5">
+                          <UserIcon className="h-3.5 w-3.5 text-slate-400" />
+                          <span>{deal.expand.contact.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="p-4 text-xs font-medium text-slate-600">
-                      {deal.expand?.contact?.name || 'N/A'}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5">
-                        {deal.expand?.etapa && (
-                          <span
-                            className="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                            style={{
-                              backgroundColor: `${deal.expand.etapa.cor || '#0F766E'}15`,
-                              color: deal.expand.etapa.cor || '#0F766E',
-                            }}
-                          >
-                            {deal.expand.etapa.nome}
-                          </span>
-                        )}
-                        {deal.expand?.etapa_anterior && (
-                          <span
-                            className="inline-block px-2 py-1 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700"
-                            title="Etapa em que o lead parou"
-                          >
-                            parou em: {deal.expand.etapa_anterior.nome}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
+                    <td className="p-4 text-xs text-slate-600">
                       <Badge
                         variant="outline"
-                        className={
-                          deal.priority === 'alta'
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
-                            : deal.priority === 'média'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-slate-100 text-slate-600'
-                        }
+                        className="font-semibold"
+                        style={{ borderColor: stages.find((s) => s.id === deal.etapa)?.cor }}
                       >
-                        {deal.priority}
+                        {rotulosEtapa[deal.etapa] || '—'}
                       </Badge>
                     </td>
-                    <td className="p-4 text-xs text-slate-400">
+                    <td className="p-4 text-xs capitalize">{deal.priority}</td>
+                    <td className="p-4 text-xs">
                       {deal.expected_close_date
                         ? new Date(deal.expected_close_date).toLocaleDateString('pt-BR')
-                        : 'N/A'}
+                        : '—'}
+                    </td>
+                    <td className="p-4">
+                      <Badge variant="outline" className={statusColors[deal.status] || ''}>
+                        {statusLabels[deal.status] || deal.status.toUpperCase()}
+                      </Badge>
                     </td>
                     <td className="p-4 text-right space-x-1">
                       {isAdmin && (
@@ -388,9 +444,9 @@ export default function Deals() {
       />
 
       <DealDetailDrawer
-        deal={selectedDealDetail}
-        open={!!selectedDealDetail}
-        onClose={() => setSelectedDealDetail(null)}
+        deal={selectedDeal}
+        open={!!selectedDeal}
+        onClose={() => setSelectedDeal(null)}
         onUpdated={loadData}
       />
     </div>
