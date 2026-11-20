@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T02:10:33.034Z",
+  "generatedAt": "2026-11-20T02:25:13.631Z",
   "collections": [
     {
       "name": "users",
@@ -1172,8 +1172,8 @@
       "name": "assistente_logs",
       "type": "base",
       "apiRules": {
-        "list": null,
-        "view": null,
+        "list": "@request.auth.id != '' && (@request.auth.perfil = 'admin' || @request.auth.role = 'admin')",
+        "view": "@request.auth.id != '' && (@request.auth.perfil = 'admin' || @request.auth.role = 'admin')",
         "create": null,
         "update": null,
         "delete": null

@@ -17,6 +17,7 @@ import OrdensServico from './pages/OrdensServico'
 import Metas from './pages/Metas'
 import Glossario from './pages/Glossario'
 import UsersPage from './pages/Users'
+import AssistenteUso from './pages/AssistenteUso'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
@@ -51,6 +52,7 @@ const App = () => (
 
               <Route element={<AdminRoute />}>
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/assistente-uso" element={<AssistenteUso />} />
               </Route>
             </Route>
           </Route>

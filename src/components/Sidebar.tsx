@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   BookOpen,
   LogOut,
+  Bot,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -38,7 +39,12 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     { label: 'Ordens de Serviço', path: '/ordens-servico', icon: Wrench },
     { label: 'Metas', path: '/metas', icon: Target },
     { label: 'Glossário de indicadores', path: '/glossario', icon: BookOpen },
-    ...(isAdmin ? [{ label: 'Usuários', path: '/users', icon: ShieldCheck }] : []),
+    ...(isAdmin
+      ? [
+          { label: 'Usuários', path: '/users', icon: ShieldCheck },
+          { label: 'Uso do Assistente', path: '/assistente-uso', icon: Bot },
+        ]
+      : []),
   ]
 
   const handleLogout = () => {

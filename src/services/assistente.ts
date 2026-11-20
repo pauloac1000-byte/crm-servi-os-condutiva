@@ -39,14 +39,25 @@ export async function perguntarAssistente(
   pergunta: string,
   conversaId: string,
 ): Promise<RespostaAssistente> {
-  const resposta = await pb.send<{
+  let resposta: {
     resposta?: string
     conversa_id?: string
     consultas?: ConsultaFuncao[]
-  }>('/backend/v1/assistente-ia', {
-    method: 'POST',
-    body: { pergunta, conversa_id: conversaId },
-  })
+  }
+  try {
+    resposta = await pb.send('/backend/v1/assistente-ia', {
+      method: 'POST',
+      body: { pergunta, conversa_id: conversaId },
+    })
+  } catch (err: unknown) {
+    // a rota devolve { erro } com mensagem amigável (teto diário, provedor
+    // indisponível...); o SDK não extrai esse campo, então a leitura é aqui
+    const corpo = (err as { response?: { erro?: string; data?: { erro?: string } } })?.response
+    const msgServidor = corpo?.erro || corpo?.data?.erro || ''
+    throw new Error(
+      msgServidor || 'Não foi possível obter resposta do assistente. Tente novamente em instantes.',
+    )
+  }
 
   return {
     resposta: resposta.resposta ?? '',

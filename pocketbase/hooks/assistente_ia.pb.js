@@ -55,8 +55,12 @@ routerAdd(
 
     const MSG_NAO_CONFIGURADO = 'Assistente indisponível no momento. Avise o administrador.'
     const MSG_LIMITE = 'Limite de uso do assistente atingido. Tente novamente mais tarde.'
-    const MSG_FALHA = 'O assistente não conseguiu responder agora. Tente novamente.'
-    const MSG_TEMPO = 'O assistente demorou demais para responder. Tente novamente.'
+    const MSG_TETO =
+      'Você atingiu o limite de 30 perguntas por dia ao assistente. Tente novamente amanhã.'
+    const MSG_FALHA =
+      'O assistente está indisponível no momento, mas sua pergunta não foi perdida — tente novamente em instantes.'
+    const MSG_TEMPO =
+      'O assistente está indisponível no momento, mas sua pergunta não foi perdida — tente novamente em instantes.'
 
     // grava o registro de log; falha de log nunca derruba a resposta
     // (funcoes: "nome(filtro):linhas; ..." — sem conteúdo de linha, sem dado pessoal)
@@ -131,6 +135,43 @@ routerAdd(
     // mesmos ramos das regras de API (migration 0031)
     const podeComercial = ehAdmin || perfil === 'comercial'
     const podeTecnico = ehAdmin || perfil === 'comercial' || perfil === 'tecnico'
+
+    // =====================================================================
+    // LIMITE DIÁRIO (servidor): 30 perguntas por usuário por dia (UTC),
+    // contadas em assistente_logs — só registros SEM erro contam para o teto
+    // (uma pane do provedor não queima a cota do usuário; os erros ficam
+    // registrados à parte para o painel admin). Checado ANTES de qualquer
+    // chamada ao provedor; a tentativa bloqueada é logada com a categoria
+    // "limite diário" (que por ter erro não conta para o próprio teto).
+    // =====================================================================
+    const LIMITE_DIARIO = 30
+    const diaUtc = new Date().toISOString().substring(0, 10)
+    try {
+      const fatiaUso = arrayOf(new DynamicModel({ qtd: 0 }))
+      e.app
+        .db()
+        .newQuery(
+          "SELECT COUNT(*) AS qtd FROM assistente_logs WHERE COALESCE(usuario_id,'') = {:uid}" +
+            " AND substr(COALESCE(created,''),1,10) = {:dia} AND COALESCE(erro,'') = ''",
+        )
+        .bind({ uid: uid, dia: diaUtc })
+        .all(fatiaUso)
+      const usadasHoje = fatiaUso.length ? parseInt(String(fatiaUso[0].qtd), 10) || 0 : 0
+      if (usadasHoje >= LIMITE_DIARIO) {
+        registrarLog(modelo, 0, Date.now() - inicio, 'limite diário', '', 0)
+        return e.json(429, {
+          erro: MSG_TETO,
+          limite_diario: LIMITE_DIARIO,
+          usadas_hoje: usadasHoje,
+        })
+      }
+    } catch (erroUso) {
+      // falha na contagem NUNCA bloqueia o uso (falha aberta); fica no log
+      console.log(
+        'assistente_ia: falha ao contar o uso do dia: ' +
+          String((erroUso && erroUso.message) || erroUso || ''),
+      )
+    }
 
     // =====================================================================
     // RESUMO AGREGADO (servidor) — somente números e rótulos, sem dado pessoal.
@@ -940,8 +981,13 @@ routerAdd(
     const consultasFeitas = []
     let tokens = 0
     let respostaFinal = ''
+    // modelo que de fato respondeu (muda para a reserva no fallback; aparece
+    // na conversa gravada e no log)
+    let modeloEfetivo = modelo
+    // modelo de reserva (segredo opcional IA_MODELO_RESERVA; vazio = sem fallback)
+    const modeloReserva = ($os.getenv('IA_MODELO_RESERVA') || '').trim()
 
-    const chamarModelo = () =>
+    const chamarModelo = (nomeModelo) =>
       $http.send({
         url: baseUrl + '/chat/completions',
         method: 'POST',
@@ -950,7 +996,7 @@ routerAdd(
           Authorization: 'Bearer ' + apiKey,
         },
         body: JSON.stringify({
-          model: modelo,
+          model: nomeModelo,
           messages: mensagens,
           tools: FERRAMENTAS,
           max_tokens: MAX_TOKENS,
@@ -958,100 +1004,20 @@ routerAdd(
         timeout: TIMEOUT_SEGUNDOS,
       })
 
-    // erros de transporte/provedor: categoriza e responde amigável (a mensagem
-    // crua pode trazer detalhes de rede: só a categoria é usada)
-    const falhaTransporte = (err) => {
-      const txt = String((err && err.message) || err || '').toLowerCase()
-      const latencia = Date.now() - inicio
-      if (/timeout|timed out|deadline|context canceled/.test(txt)) {
-        console.log('assistente_ia: tempo esgotado em ' + latencia + 'ms')
-        registrarLog(
-          modelo,
-          tokens,
-          latencia,
-          'tempo esgotado',
-          resumoFuncoes(consultasFeitas),
-          consultasFeitas.length,
-        )
-        return e.json(504, { erro: MSG_TEMPO })
+    // processa a resposta do modelo (com ou sem tool calls): devolve a resposta
+    // final ou empilha as mensagens de ferramenta para a próxima volta do loop;
+    // falha de log nunca derruba a resposta
+    const continuarComResposta = (res) => {
+      if (res.json && res.json.usage && typeof res.json.usage.total_tokens === 'number') {
+        tokens += res.json.usage.total_tokens
       }
-      console.log('assistente_ia: falha do provedor em ' + latencia + 'ms')
-      registrarLog(
-        modelo,
-        tokens,
-        latencia,
-        'falha do provedor',
-        resumoFuncoes(consultasFeitas),
-        consultasFeitas.length,
-      )
-      return e.json(502, { erro: MSG_FALHA })
-    }
-    const resumoFuncoes = (feitas) =>
-      feitas
-        .map((c) => c.funcao + '(' + c.filtro + '):' + c.linhas)
-        .join('; ')
-        .substring(0, 2000)
-
-    // loop de tool calling: modelo pede funções → servidor executa → devolve
-    // resultado como mensagem de tool → chama de novo. Máximo de 3 execuções
-    // e 5 voltas (o excedente recebe a instrução de responder com o que tem).
-    for (let volta = 0; volta < 5; volta++) {
-      let res
-      try {
-        res = chamarModelo()
-      } catch (err) {
-        return falhaTransporte(err)
-      }
-
-      const latenciaParcial = Date.now() - inicio
-      if (res.statusCode === 429 || res.statusCode === 413) {
-        console.log(
-          'assistente_ia: limite de tokens (status ' +
-            res.statusCode +
-            ') em ' +
-            latenciaParcial +
-            'ms',
-        )
-        registrarLog(
-          modelo,
-          tokens,
-          latenciaParcial,
-          'limite de tokens',
-          resumoFuncoes(consultasFeitas),
-          consultasFeitas.length,
-        )
-        return e.json(429, { erro: MSG_LIMITE })
-      }
-      if (res.statusCode < 200 || res.statusCode >= 300) {
-        console.log(
-          'assistente_ia: falha do provedor (status ' +
-            res.statusCode +
-            ') em ' +
-            latenciaParcial +
-            'ms',
-        )
-        registrarLog(
-          modelo,
-          tokens,
-          latenciaParcial,
-          'falha do provedor',
-          resumoFuncoes(consultasFeitas),
-          consultasFeitas.length,
-        )
-        return e.json(502, { erro: MSG_FALHA })
-      }
-
-      const dados = res.json
-      if (dados && dados.usage && typeof dados.usage.total_tokens === 'number') {
-        tokens += dados.usage.total_tokens
-      }
-      const choice = dados && dados.choices && dados.choices[0]
+      const choice = res.json && res.json.choices && res.json.choices[0]
       const msg = choice && choice.message ? choice.message : null
       const toolCalls = msg && msg.tool_calls && msg.tool_calls.length ? msg.tool_calls : null
 
       if (!toolCalls) {
         respostaFinal = msg && typeof msg.content === 'string' ? msg.content.trim() : ''
-        break
+        return
       }
 
       mensagens.push({
@@ -1091,26 +1057,171 @@ routerAdd(
       }
     }
 
+    // erros de transporte/provedor: categoriza e responde amigável (a mensagem
+    // crua pode trazer detalhes de rede: só a categoria é usada)
+    const falhaTransporte = (err, statusProvedor) => {
+      const txt = String((err && err.message) || err || '').toLowerCase()
+      const latencia = Date.now() - inicio
+      const categoria =
+        err && /timeout|timed out|deadline|context canceled/.test(txt)
+          ? 'tempo esgotado'
+          : err
+            ? 'falha do provedor'
+            : Number(statusProvedor) === 429 || Number(statusProvedor) === 413
+              ? 'limite de tokens'
+              : 'falha do provedor'
+      console.log(
+        'assistente_ia: ' +
+          categoria +
+          ' em ' +
+          latencia +
+          'ms (status ' +
+          String(statusProvedor || 'n/a') +
+          ')',
+      )
+      registrarLog(
+        modeloEfetivo,
+        tokens,
+        latencia,
+        categoria,
+        resumoFuncoes(consultasFeitas),
+        consultasFeitas.length,
+      )
+      // a pergunta NÃO se perde: a troca fica no histórico com a mensagem
+      // amigável como resposta — o usuário reenvia pelo próprio painel
+      registrarTroca(e.auth.id, pergunta, MSG_FALHA, conversaId, modeloEfetivo)
+      if (categoria === 'tempo esgotado') return e.json(504, { erro: MSG_FALHA })
+      if (categoria === 'limite de tokens') return e.json(429, { erro: MSG_FALHA })
+      return e.json(502, { erro: MSG_FALHA })
+    }
+
+    // Fallback de modelo: quando o principal falha (transporte, tempo ou HTTP,
+    // inclusive cota do provedor), tenta UMA vez o modelo de reserva
+    // (IA_MODELO_RESERVA, opcional). Sem o segredo — ou igual ao principal —,
+    // segue direto para a resposta de falha. A pergunta NÃO se perde: a
+    // tentativa de reserva reusa as mesmas mensagens do turno (histórico +
+    // funções já executadas) e o painel mantém a pergunta do usuário em tela.
+    // Retorno: a resposta de falha (truthy — o chamador a devolve) ou '' quando
+    // a reserva respondeu (respostaFinal preenchida; o chamador sai do loop e
+    // segue para a persistência/200 normal).
+    const tentarReserva = (err, statusProvedor) => {
+      const motivo = err
+        ? String((err && err.message) || err || '').toLowerCase()
+        : 'status ' + String(statusProvedor || '')
+      if (modeloReserva && modeloReserva !== modelo) {
+        console.log(
+          'assistente_ia: tentando o modelo de reserva após falha (' +
+            motivo.substring(0, 120) +
+            ')',
+        )
+        try {
+          const resR = chamarModelo(modeloReserva)
+          if (resR.statusCode >= 200 && resR.statusCode < 300) {
+            modeloEfetivo = modeloReserva
+            continuarComResposta(resR)
+            if (respostaFinal) return '' // resposta pronta: o chamador sai do loop
+          } else {
+            console.log('assistente_ia: reserva também falhou (status ' + resR.statusCode + ')')
+          }
+        } catch (errR) {
+          console.log(
+            'assistente_ia: reserva também falhou (' +
+              String((errR && errR.message) || errR || '').substring(0, 120) +
+              ')',
+          )
+        }
+      }
+      return falhaTransporte(err, statusProvedor)
+    }
+    const resumoFuncoes = (feitas) =>
+      feitas
+        .map((c) => c.funcao + '(' + c.filtro + '):' + c.linhas)
+        .join('; ')
+        .substring(0, 2000)
+
+    // loop de tool calling: modelo pede funções → servidor executa → devolve
+    // resultado como mensagem de tool → chama de novo. Máximo de 3 execuções
+    // e 5 voltas (o excedente recebe a instrução de responder com o que tem).
+    for (let volta = 0; volta < 5; volta++) {
+      let res
+      try {
+        res = chamarModelo(modelo)
+      } catch (err) {
+        const falha = tentarReserva(err, null)
+        if (falha) return falha
+        break // a reserva respondeu: segue para a persistência e 200
+      }
+
+      const latenciaParcial = Date.now() - inicio
+      if (res.statusCode === 429 || res.statusCode === 413) {
+        console.log(
+          'assistente_ia: limite do provedor (status ' +
+            res.statusCode +
+            ') em ' +
+            latenciaParcial +
+            'ms',
+        )
+        registrarLog(
+          modeloEfetivo,
+          tokens,
+          latenciaParcial,
+          'limite de tokens',
+          resumoFuncoes(consultasFeitas),
+          consultasFeitas.length,
+        )
+        const falha = tentarReserva(null, res.statusCode)
+        if (falha) return falha
+        break // a reserva respondeu: segue para a persistência e 200
+      }
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        console.log(
+          'assistente_ia: falha do provedor (status ' +
+            res.statusCode +
+            ') em ' +
+            latenciaParcial +
+            'ms',
+        )
+        registrarLog(
+          modeloEfetivo,
+          tokens,
+          latenciaParcial,
+          'falha do provedor',
+          resumoFuncoes(consultasFeitas),
+          consultasFeitas.length,
+        )
+        const falha = tentarReserva(null, res.statusCode)
+        if (falha) return falha
+        break // a reserva respondeu: segue para a persistência e 200
+      }
+
+      // resposta final (respostaFinal preenchido) ou mensagens de ferramenta
+      // empilhadas para a próxima volta
+      continuarComResposta(res)
+      if (respostaFinal) break
+    }
+
     if (!respostaFinal) {
       // o modelo esgotou as voltas pedindo funções ou voltou vazio
       const latencia = Date.now() - inicio
       console.log('assistente_ia: falha do provedor (resposta vazia) em ' + latencia + 'ms')
       registrarLog(
-        modelo,
+        modeloEfetivo,
         tokens,
         latencia,
         'falha do provedor',
         resumoFuncoes(consultasFeitas),
         consultasFeitas.length,
       )
+      // pergunta preservada no histórico com a mensagem amigável
+      registrarTroca(e.auth.id, pergunta, MSG_FALHA, conversaId, modeloEfetivo)
       return e.json(502, { erro: MSG_FALHA })
     }
 
     // persiste a troca e devolve o identificador da conversa + as consultas
     // feitas (para a linha discreta do painel); falha de persistência nunca derruba a resposta
-    registrarTroca(e.auth.id, pergunta, respostaFinal, conversaId, modelo)
+    registrarTroca(e.auth.id, pergunta, respostaFinal, conversaId, modeloEfetivo)
     registrarLog(
-      modelo,
+      modeloEfetivo,
       tokens,
       Date.now() - inicio,
       '',
