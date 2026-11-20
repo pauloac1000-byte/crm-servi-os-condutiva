@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T01:41:41.763Z",
+  "generatedAt": "2026-11-20T02:10:33.034Z",
   "collections": [
     {
       "name": "users",
@@ -1222,6 +1222,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "funcoes_acionadas",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "linhas_por_funcao",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": ["CREATE INDEX idx_assistente_logs_usuario ON assistente_logs (usuario_id)"]

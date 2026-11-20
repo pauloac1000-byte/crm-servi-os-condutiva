@@ -7,9 +7,11 @@ import {
   carregarConversas,
   carregarTrocas,
   type TrocaAssistente,
+  type ConsultaFuncao,
 } from '@/services/assistente'
 import { formatarRespostaAssistente } from '@/lib/assistente-formatar'
 import { sugestoesAssistente } from '@/lib/assistente-sugestoes'
+import { substituirIdsPorNomes } from '@/lib/assistente-resolver-nomes'
 
 // Assistente de IA do CRM. Painel lateral fixo à direita (400px) que SOBREPÕE o
 // conteúdo (position fixed, não empurra o layout) e vira tela cheia abaixo de 768px (md).
@@ -19,6 +21,11 @@ import { sugestoesAssistente } from '@/lib/assistente-sugestoes'
 // Ao abrir, o painel recarrega a última conversa do usuário; "nova conversa" começa
 // um identificador novo (as anteriores continuam gravadas). Nenhum HTML cru é
 // renderizado — a resposta passa pelo conversor próprio (assistente-formatar).
+//
+// Pseudonimização (LGPD): a rota devolve ids (#id), nunca nomes. A troca de
+// "#id" pelo nome do registro acontece SÓ aqui, na exibição, buscada no
+// PocketBase pelo próprio usuário (assistente-resolver-nomes). Abaixo de cada
+// resposta com consulta, uma linha discreta lista as funções acionadas.
 
 interface Mensagem {
   id: string
@@ -26,6 +33,17 @@ interface Mensagem {
   texto: string
   // quando true, mostra o indicador "pensando" no lugar do texto
   pendente?: boolean
+  // funções de leitura que geraram a resposta (linha discreta; só exibição)
+  consultas?: ConsultaFuncao[]
+}
+
+// rótulo legível da função acionada (a rota devolve o nome interno)
+const ROTULO_FUNCAO: Record<string, string> = {
+  consultar_leads: 'leads por etapa/status/período',
+  consultar_atividades_pendentes: 'atividades pendentes',
+  consultar_visitas: 'visitas por período',
+  consultar_contratos: 'contratos por situação/período',
+  consultar_metas: 'metas por ano',
 }
 
 interface Props {
@@ -134,8 +152,20 @@ export default function PainelAssistente({ aberto, onFechar }: Props) {
       const r = await perguntarAssistente(pergunta, idConversa)
       // o servidor pode ter gerado um id novo (pergunta sem conversa_id): adota
       if (r.conversaId) definirConversa(r.conversaId)
+      // troca "#id" pelo nome do registro SÓ no texto exibido (a rota devolve
+      // ids); se a busca falhar, o texto segue com os ids
+      let textoExibicao = r.resposta
+      try {
+        textoExibicao = await substituirIdsPorNomes(r.resposta, r.consultas)
+      } catch {
+        // mantém o texto com "#id"
+      }
       setMensagens((atual) =>
-        atual.map((m) => (m.id === idResposta ? { ...m, texto: r.resposta, pendente: false } : m)),
+        atual.map((m) =>
+          m.id === idResposta
+            ? { ...m, texto: textoExibicao, pendente: false, consultas: r.consultas }
+            : m,
+        ),
       )
     } catch (err) {
       const msg =
@@ -258,6 +288,18 @@ export default function PainelAssistente({ aberto, onFechar }: Props) {
               ) : m.papel === 'assistente' ? (
                 <div className="space-y-1">
                   <div className="break-words">{formatarRespostaAssistente(m.texto)}</div>
+                  {m.consultas && m.consultas.length > 0 && (
+                    <p className="text-[11px] text-slate-400">
+                      Consultas:{' '}
+                      {m.consultas
+                        .map((c) => {
+                          const rotulo = ROTULO_FUNCAO[c.funcao] ?? c.funcao
+                          const filtro = c.filtro ? ` (${c.filtro})` : ''
+                          return `${rotulo}${filtro} — ${c.linhas} linha${c.linhas === 1 ? '' : 's'}`
+                        })
+                        .join('; ')}
+                    </p>
+                  )}
                   <button
                     type="button"
                     aria-label="Copiar resposta"
