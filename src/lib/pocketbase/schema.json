@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T01:29:29.533Z",
+  "generatedAt": "2026-11-20T01:41:41.763Z",
   "collections": [
     {
       "name": "users",
@@ -1225,6 +1225,69 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_assistente_logs_usuario ON assistente_logs (usuario_id)"]
+    },
+    {
+      "name": "assistente_conversas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && usuario = @request.auth.id",
+        "view": "@request.auth.id != '' && usuario = @request.auth.id",
+        "create": "@request.auth.id != '' && usuario = @request.auth.id",
+        "update": "@request.auth.id != '' && usuario = @request.auth.id",
+        "delete": "@request.auth.id != '' && usuario = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "usuario",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "pergunta",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "resposta",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "conversa_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "modelo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_assistente_conversas_usuario ON assistente_conversas (usuario)",
+        "CREATE INDEX idx_assistente_conversas_conversa ON assistente_conversas (conversa_id)",
+        "CREATE INDEX idx_assistente_conversas_usuario_conversa ON assistente_conversas (usuario, conversa_id, created)"
+      ]
     }
   ]
 }

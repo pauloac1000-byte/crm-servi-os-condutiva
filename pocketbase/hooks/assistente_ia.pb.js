@@ -6,7 +6,9 @@
 // (migration 0031: perfil da coleção users, com fallback ao role antigo) e
 // envia o resumo ao provedor (API compatível com OpenAI, em IA_BASE_URL +
 // /chat/completions, com IA_API_KEY e IA_MODELO lidos por nome) dentro de um
-// bloco delimitado marcado como dados. Responde apenas { resposta }.
+// bloco delimitado marcado como dados. Responde { resposta, conversa_id } e grava
+// a troca (pergunta + resposta + usuário + modelo + conversa) em assistente_conversas
+// (migration 0034) — a coleção assistente_logs continua como está.
 // Regras do projeto: rotas routerAdd respondem sempre com e.json; a chave e o
 // header Authorization nunca vão para log nem para a resposta — só a categoria
 // do erro. Erros de provedor/limite/tempo viram mensagem curta amigável.
@@ -52,11 +54,35 @@ routerAdd(
       }
     }
 
+    // grava a TROCA (pergunta + resposta) na coleção assistente_conversas
+    // (migration 0034); falha de persistência nunca derruba a resposta ao usuário
+    const registrarTroca = (usuarioId, pergunta, resposta, conversaId, modelo) => {
+      try {
+        const col = e.app.findCollectionByNameOrId('assistente_conversas')
+        const rec = new Record(col)
+        rec.set('usuario', usuarioId)
+        rec.set('pergunta', pergunta)
+        rec.set('resposta', resposta)
+        rec.set('conversa_id', conversaId)
+        rec.set('modelo', modelo || '')
+        e.app.save(rec)
+      } catch (erroTroca) {
+        const classe = String((erroTroca && erroTroca.message) || erroTroca || '')
+        console.log('assistente_ia: falha ao gravar conversa: ' + classe)
+      }
+    }
+
     const corpo = e.requestInfo().body || {}
     const pergunta = typeof corpo.pergunta === 'string' ? corpo.pergunta.trim() : ''
     if (!pergunta || pergunta.length > MAX_PERGUNTA) {
       return e.json(400, { erro: 'Digite uma pergunta de até 2000 caracteres.' })
     }
+
+    // identificador da conversa: o painel envia o seu (nova conversa = novo id);
+    // sem ele, o servidor gera um e devolve na resposta
+    let conversaId =
+      typeof corpo.conversa_id === 'string' ? corpo.conversa_id.trim().slice(0, 64) : ''
+    if (!conversaId) conversaId = $security.randomString(12)
 
     const baseUrl = ($os.getenv('IA_BASE_URL') || '').trim().replace(/\/+$/, '')
     const apiKey = ($os.getenv('IA_API_KEY') || '').trim()
@@ -484,8 +510,11 @@ routerAdd(
       return e.json(502, { erro: MSG_FALHA })
     }
 
+    // persiste a troca e devolve o identificador da conversa ao painel;
+    // falha de persistência nunca derruba a resposta
+    registrarTroca(e.auth.id, pergunta, texto, conversaId, modelo)
     registrarLog(modelo, tokens, latencia, '')
-    return e.json(200, { resposta: texto })
+    return e.json(200, { resposta: texto, conversa_id: conversaId })
   },
   $apis.requireAuth(),
 )
