@@ -12,6 +12,10 @@
 // do erro. Erros de provedor/limite/tempo viram mensagem curta amigável.
 // ATENÇÃO (JSVM): callbacks não enxergam declarações de topo de arquivo —
 // toda a lógica vive inline dentro do handler.
+// ATENÇÃO (JSVM): leitura de SQL cru NÃO é q.all() sem argumento — é
+// q.all(fatia), com a fatia criada por arrayOf(new DynamicModel({...}))
+// (docs pocketbase.io/docs/js-database). Chamar q.all() sem fatia quebra a
+// montagem do resumo e a rota respondia erro genérico ao usuário.
 
 routerAdd(
   'POST',
@@ -72,7 +76,7 @@ routerAdd(
       const usuario = e.auth
       const perfil = usuario ? String(usuario.getString('perfil') || '') : ''
       const papel = usuario ? String(usuario.getString('role') || '') : ''
-      const uid = usuario ? usuario.id : ''
+      const uid = usuario ? String(usuario.id) : ''
       const ehAdmin = perfil === 'admin' || papel === 'admin'
 
       // mesmos ramos das regras de API (migration 0031)
@@ -89,10 +93,31 @@ routerAdd(
       }
       const pad2 = (n) => (n < 10 ? '0' + n : String(n))
 
-      const consultar = (sql, binds) => {
+      // Leitura no JSVM: newQuery(sql).all(fatia) com a fatia criada por
+      // arrayOf(new DynamicModel({...})) — ver nota no topo do arquivo.
+      const consultar = (nome, sql, binds) => {
         const q = db.newQuery(sql)
         if (binds) q.bind(binds)
-        const rows = q.all()
+        const rows = arrayOf(
+          new DynamicModel({
+            rotulo: '',
+            qtd: 0,
+            custo: 0,
+            valor_mensal: 0,
+            m: '',
+            mmm: '',
+            valor_meta: 0,
+            realizado: 0,
+          }),
+        )
+        try {
+          q.all(rows)
+        } catch (erroConsulta) {
+          // só a classe/mensagem curta do erro, nunca o SQL nem dados pessoais
+          const classe = String((erroConsulta && erroConsulta.message) || erroConsulta || '')
+          console.log('assistente_ia: falha no resumo: consulta ' + nome + ': ' + classe)
+          throw erroConsulta
+        }
         const saida = []
         for (let i = 0; i < rows.length; i++) saida.push(rows[i])
         return saida
@@ -125,6 +150,7 @@ routerAdd(
           'LEADS por_status: ' +
             pares(
               consultar(
+                'leads_por_status',
                 "SELECT COALESCE(NULLIF(status,''),'sem status') AS rotulo, COUNT(*) AS qtd" +
                   " FROM deals GROUP BY COALESCE(NULLIF(status,''),'sem status')",
                 null,
@@ -136,6 +162,7 @@ routerAdd(
           'LEADS por_etapa: ' +
             pares(
               consultar(
+                'leads_por_etapa',
                 "SELECT COALESCE(ef.nome,'sem etapa') AS rotulo, COUNT(*) AS qtd" +
                   ' FROM deals d LEFT JOIN etapas_funil ef ON ef.id = d.etapa' +
                   " GROUP BY COALESCE(ef.nome,'sem etapa') ORDER BY qtd DESC",
@@ -148,6 +175,7 @@ routerAdd(
           'CONTATOS por_status: ' +
             pares(
               consultar(
+                'contatos_por_status',
                 "SELECT COALESCE(NULLIF(status,''),'sem status') AS rotulo, COUNT(*) AS qtd" +
                   " FROM contacts GROUP BY COALESCE(NULLIF(status,''),'sem status')",
                 null,
@@ -159,6 +187,7 @@ routerAdd(
           'ATIVIDADES por_status: ' +
             pares(
               consultar(
+                'atividades_por_status',
                 "SELECT COALESCE(NULLIF(status,''),'sem status') AS rotulo, COUNT(*) AS qtd" +
                   " FROM activities GROUP BY COALESCE(NULLIF(status,''),'sem status')",
                 null,
@@ -172,6 +201,7 @@ routerAdd(
         const ondeV = ehAdmin ? '' : ' WHERE responsavel = {:uid} '
         const bindsV = ehAdmin ? null : { uid: uid }
         const rowsV = consultar(
+          'visitas_por_resultado',
           "SELECT COALESCE(NULLIF(resultado,''),'sem resultado') AS rotulo, COUNT(*) AS qtd," +
             ' COALESCE(SUM(COALESCE(custo_total,0)),0) AS custo' +
             ' FROM visitas_comerciais' +
@@ -211,6 +241,7 @@ routerAdd(
           'ORDENS DE SERVIÇO por_status: ' +
             pares(
               consultar(
+                'os_por_status',
                 "SELECT COALESCE(NULLIF(status,''),'sem status') AS rotulo, COUNT(*) AS qtd" +
                   ' FROM ordens_servico' +
                   ondeOS +
@@ -221,6 +252,7 @@ routerAdd(
         )
 
         const rowsC = consultar(
+          'contratos_por_situacao',
           "SELECT COALESCE(NULLIF(status,''),'sem status') AS rotulo, COUNT(*) AS qtd," +
             ' COALESCE(SUM(COALESCE(valor_mensal,0)),0) AS valor_mensal' +
             ' FROM contratos' +
@@ -256,13 +288,14 @@ routerAdd(
           "substr(COALESCE(NULLIF(substr(data_inicio,1,10),''), substr(created,1,10)),1,4) = {:ano} "
 
         const metasAno = consultar(
-          "SELECT mes, valor_meta FROM metas WHERE ano = {:ano} AND kpi = 'RCS' ORDER BY mes",
-          { ano: ano },
+          'metas_do_ano',
+          "SELECT CAST(mes AS TEXT) AS m, valor_meta FROM metas WHERE ano = {:ano} AND kpi = 'RCS' ORDER BY mes",
+          { ano: String(ano) },
         )
         let metaAnual = null
         const metaPorMes = {}
         for (let i = 0; i < metasAno.length; i++) {
-          const mes = parseInt(String(metasAno[i].mes), 10) || 0
+          const mes = parseInt(String(metasAno[i].m), 10) || 0
           if (mes === 0) metaAnual = num(metasAno[i].valor_meta)
           else metaPorMes[mes] = num(metasAno[i].valor_meta)
         }
@@ -272,7 +305,8 @@ routerAdd(
         // mês — mesmo critério do bloco Metas do Dashboard; respeita o recorte
         // de acesso dos contratos (comercial só os próprios)
         const realizadoRows = consultar(
-          "SELECT substr(COALESCE(NULLIF(substr(data_inicio,1,10),''), substr(created,1,10)),6,2) AS mm," +
+          'realizado_mensal',
+          "SELECT substr(COALESCE(NULLIF(substr(data_inicio,1,10),''), substr(created,1,10)),6,2) AS mmm," +
             ' SUM(COALESCE(valor_mensal,0) * CASE' +
             " WHEN data_fim IS NOT NULL AND data_fim != '' AND data_inicio IS NOT NULL AND data_inicio != ''" +
             ' THEN MAX(0, CAST(ROUND((julianday(substr(data_fim,1,10)) - julianday(substr(data_inicio,1,10))) / 30.44) AS INTEGER))' +
@@ -280,12 +314,12 @@ routerAdd(
             ' FROM contratos' +
             ondeC +
             eAno +
-            ' GROUP BY mm',
-          ehAdmin ? { ano: ano } : { uid: uid, ano: ano },
+            ' GROUP BY mmm',
+          ehAdmin ? { ano: String(ano) } : { uid: uid, ano: String(ano) },
         )
         const realizadoPorMes = {}
         for (let i = 0; i < realizadoRows.length; i++) {
-          const mes = parseInt(String(realizadoRows[i].mm), 10) || 0
+          const mes = parseInt(String(realizadoRows[i].mmm), 10) || 0
           if (mes >= 1 && mes <= 12) realizadoPorMes[mes] = num(realizadoRows[i].realizado)
         }
 
@@ -334,8 +368,8 @@ routerAdd(
         )
       }
     } catch (err) {
-      // não loga o erro cru (pode conter detalhes internos)
-      console.log('assistente_ia: falha ao montar o resumo agregado')
+      // o erro já foi logado com a consulta que falhou; aqui só a resposta amigável
+      console.log('assistente_ia: falha do resumo: ' + String((err && err.message) || err || ''))
       registrarLog(modelo, 0, Date.now() - inicio, 'falha do resumo')
       return e.json(502, { erro: MSG_FALHA })
     }
@@ -404,15 +438,7 @@ routerAdd(
       return e.json(502, { erro: MSG_FALHA })
     }
 
-    let dados = res.json
-    if (!dados) {
-      try {
-        dados = JSON.parse(toString(res.body))
-      } catch (_) {
-        dados = null
-      }
-    }
-
+    const dados = res.json
     const choice = dados && dados.choices && dados.choices[0]
     const texto =
       choice && choice.message && typeof choice.message.content === 'string'
