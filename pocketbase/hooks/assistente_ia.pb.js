@@ -16,6 +16,9 @@
 // q.all(fatia), com a fatia criada por arrayOf(new DynamicModel({...}))
 // (docs pocketbase.io/docs/js-database). Chamar q.all() sem fatia quebra a
 // montagem do resumo e a rota respondia erro genérico ao usuário.
+// ATENÇÃO (JSVM): no DynamicModel da fatia, coluna de DINHEIRO é 0.0 (float):
+// literal inteiro vira int64 e a SUM com centavos não faz o scan (erro
+// "converting driver.Value type float64 to a int64").
 
 routerAdd(
   'POST',
@@ -102,12 +105,16 @@ routerAdd(
           new DynamicModel({
             rotulo: '',
             qtd: 0,
-            custo: 0,
-            valor_mensal: 0,
+            // colunas de dinheiro (SUM de valores com centavos) são DECIMAIS:
+            // declarar como 0.0 (float64). Com 0 inteiro o JSVM cria int64 e a
+            // leitura quebra com "converting driver.Value type float64 to a
+            // int64" sempre que a soma não for redonda (ex.: 379.54).
+            custo: 0.0,
+            valor_mensal: 0.0,
             m: '',
             mmm: '',
-            valor_meta: 0,
-            realizado: 0,
+            valor_meta: 0.0,
+            realizado: 0.0,
           }),
         )
         try {
@@ -289,7 +296,7 @@ routerAdd(
 
         const metasAno = consultar(
           'metas_do_ano',
-          "SELECT CAST(mes AS TEXT) AS m, valor_meta FROM metas WHERE ano = {:ano} AND kpi = 'RCS' ORDER BY mes",
+          "SELECT CAST(mes AS TEXT) AS m, COALESCE(valor_meta,0) AS valor_meta FROM metas WHERE ano = {:ano} AND kpi = 'RCS' ORDER BY mes",
           { ano: String(ano) },
         )
         let metaAnual = null
