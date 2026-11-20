@@ -55,8 +55,7 @@ routerAdd(
 
     const MSG_NAO_CONFIGURADO = 'Assistente indisponível no momento. Avise o administrador.'
     const MSG_LIMITE = 'Limite de uso do assistente atingido. Tente novamente mais tarde.'
-    const MSG_TETO =
-      'Você atingiu o limite de 30 perguntas por dia ao assistente. Tente novamente amanhã.'
+    const MSG_TETO_BASE = 'Você atingiu o limite de 30 perguntas por dia ao assistente.'
     const MSG_FALHA =
       'O assistente está indisponível no momento, mas sua pergunta não foi perdida — tente novamente em instantes.'
     const MSG_TEMPO =
@@ -158,11 +157,42 @@ routerAdd(
         .all(fatiaUso)
       const usadasHoje = fatiaUso.length ? parseInt(String(fatiaUso[0].qtd), 10) || 0 : 0
       if (usadasHoje >= LIMITE_DIARIO) {
+        // Tempo restante até o contador zerar: o limite é por dia UTC, então o
+        // zero é à meia-noite UTC. Mensagem dinâmica em vez do "amanhã" fixo.
+        // Arredondamento: minutos = teto (ceil) para "dentro de X minutos" ser
+        // sempre verdadeiro; horas = piso (faltando 7h20 → "7 horas"), que
+        // nunca superestima o tempo real restante.
+        const agora = new Date()
+        const msAteZero =
+          Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 1) -
+          agora.getTime()
+        let msgTeto = MSG_TETO_BASE + ' Tente novamente amanhã.'
+        let minutosRestantes = 0
+        if (msAteZero > 0) {
+          minutosRestantes = Math.ceil(msAteZero / 60000)
+          if (minutosRestantes < 1) {
+            msgTeto = MSG_TETO_BASE + ' Tente novamente em instantes.'
+          } else if (minutosRestantes < 60) {
+            msgTeto =
+              MSG_TETO_BASE +
+              ' Tente novamente dentro de ' +
+              minutosRestantes +
+              (minutosRestantes === 1 ? ' minuto.' : ' minutos.')
+          } else {
+            const horasRestantes = Math.floor(minutosRestantes / 60)
+            msgTeto =
+              MSG_TETO_BASE +
+              ' Tente novamente dentro de ' +
+              horasRestantes +
+              (horasRestantes === 1 ? ' hora.' : ' horas.')
+          }
+        }
         registrarLog(modelo, 0, Date.now() - inicio, 'limite diário', '', 0)
         return e.json(429, {
-          erro: MSG_TETO,
+          erro: msgTeto,
           limite_diario: LIMITE_DIARIO,
           usadas_hoje: usadasHoje,
+          minutos_restantes: minutosRestantes,
         })
       }
     } catch (erroUso) {
