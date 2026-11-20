@@ -105,16 +105,16 @@ routerAdd(
           new DynamicModel({
             rotulo: '',
             qtd: 0,
-            // colunas de dinheiro (SUM de valores com centavos) são DECIMAIS:
-            // declarar como 0.0 (float64). Com 0 inteiro o JSVM cria int64 e a
-            // leitura quebra com "converting driver.Value type float64 to a
-            // int64" sempre que a soma não for redonda (ex.: 379.54).
-            custo: 0.0,
-            valor_mensal: 0.0,
+            // colunas de dinheiro vêm do SQL como TEXTO (CAST(... AS TEXT)) e
+            // são convertidas com parseFloat em num(). Assim o scan nunca
+            // depende do tipo numérico declarado aqui (a soma com centavos,
+            // ex.: 379.54, quebrava o scan para int64/float64).
+            custo: '',
+            valor_mensal: '',
             m: '',
             mmm: '',
-            valor_meta: 0.0,
-            realizado: 0.0,
+            valor_meta: '',
+            realizado: '',
           }),
         )
         try {
@@ -210,7 +210,7 @@ routerAdd(
         const rowsV = consultar(
           'visitas_por_resultado',
           "SELECT COALESCE(NULLIF(resultado,''),'sem resultado') AS rotulo, COUNT(*) AS qtd," +
-            ' COALESCE(SUM(COALESCE(custo_total,0)),0) AS custo' +
+            ' CAST(COALESCE(SUM(COALESCE(custo_total,0)),0) AS TEXT) AS custo' +
             ' FROM visitas_comerciais' +
             ondeV +
             " GROUP BY COALESCE(NULLIF(resultado,''),'sem resultado')",
@@ -261,7 +261,7 @@ routerAdd(
         const rowsC = consultar(
           'contratos_por_situacao',
           "SELECT COALESCE(NULLIF(status,''),'sem status') AS rotulo, COUNT(*) AS qtd," +
-            ' COALESCE(SUM(COALESCE(valor_mensal,0)),0) AS valor_mensal' +
+            ' CAST(COALESCE(SUM(COALESCE(valor_mensal,0)),0) AS TEXT) AS valor_mensal' +
             ' FROM contratos' +
             ondeC +
             " GROUP BY COALESCE(NULLIF(status,''),'sem status')",
@@ -296,7 +296,7 @@ routerAdd(
 
         const metasAno = consultar(
           'metas_do_ano',
-          "SELECT CAST(mes AS TEXT) AS m, COALESCE(valor_meta,0) AS valor_meta FROM metas WHERE ano = {:ano} AND kpi = 'RCS' ORDER BY mes",
+          "SELECT CAST(mes AS TEXT) AS m, CAST(COALESCE(valor_meta,0) AS TEXT) AS valor_meta FROM metas WHERE ano = {:ano} AND kpi = 'RCS' ORDER BY mes",
           { ano: String(ano) },
         )
         let metaAnual = null
@@ -314,10 +314,10 @@ routerAdd(
         const realizadoRows = consultar(
           'realizado_mensal',
           "SELECT substr(COALESCE(NULLIF(substr(data_inicio,1,10),''), substr(created,1,10)),6,2) AS mmm," +
-            ' SUM(COALESCE(valor_mensal,0) * CASE' +
+            ' CAST(SUM(COALESCE(valor_mensal,0) * CASE' +
             " WHEN data_fim IS NOT NULL AND data_fim != '' AND data_inicio IS NOT NULL AND data_inicio != ''" +
             ' THEN MAX(0, CAST(ROUND((julianday(substr(data_fim,1,10)) - julianday(substr(data_inicio,1,10))) / 30.44) AS INTEGER))' +
-            ' ELSE 12 END) AS realizado' +
+            ' ELSE 12 END) AS TEXT) AS realizado' +
             ' FROM contratos' +
             ondeC +
             eAno +
