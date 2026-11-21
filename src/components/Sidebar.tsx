@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import logoImg from '@/assets/logo-removebg-previewedited-6e100.jpg'
+import logoImg from '@/assets/logo-condutiva-servicos-8207f.png'
 
 interface SidebarProps {
   onCloseMobile?: () => void
@@ -62,8 +62,8 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
           <div className="flex items-center justify-start">
             <img
               src={logoImg}
-              alt="Condutiva Tecnologia"
-              className="h-10 w-auto object-contain max-w-[200px]"
+              alt="Condutiva Serviços"
+              className="h-12 w-auto object-contain max-w-[200px]"
             />
           </div>
           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-0.5">

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Lock, Mail, ArrowRight, CheckCircle2, Send, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
-import logoImg from '@/assets/logo-removebg-previewedited-6e100.jpg'
+import logoImg from '@/assets/logo-condutiva-servicos-8207f.png'
 import { AbasLogin, type AbaLogin } from '@/components/login/abas-login'
 import { AbaPrimeiroAcesso } from '@/components/login/AbaPrimeiroAcesso'
 import { AbaRedefinir } from '@/components/login/AbaRedefinir'
@@ -87,13 +87,13 @@ export default function Login() {
           <div className="mx-auto flex items-center justify-center rounded-2xl bg-white p-3.5 shadow-lg border border-slate-100 max-w-[260px] w-full">
             <img
               src={logoImg}
-              alt="Condutiva Tecnologia"
-              className="h-11 sm:h-12 w-auto object-contain"
+              alt="Condutiva Serviços"
+              className="h-16 sm:h-20 w-auto object-contain"
             />
           </div>
           <div>
             <CardTitle className="text-xl font-bold tracking-tight text-slate-900">
-              Painel de Vendas
+              CRM Serviços
             </CardTitle>
             <CardDescription className="text-[#74a91e] font-semibold text-xs tracking-widest uppercase mt-1">
               Acesse sua conta para continuar

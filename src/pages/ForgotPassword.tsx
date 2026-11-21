@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card'
 import { Mail, ArrowRight, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
-import logoImg from '@/assets/logo-removebg-previewedited-6e100.jpg'
+import logoImg from '@/assets/logo-condutiva-servicos-8207f.png'
 
 export default function ForgotPassword() {
   const { requestPasswordReset } = useAuth()
@@ -60,8 +60,8 @@ export default function ForgotPassword() {
           <div className="mx-auto flex items-center justify-center rounded-2xl bg-white p-3.5 shadow-lg border border-slate-100 max-w-[260px] w-full">
             <img
               src={logoImg}
-              alt="Condutiva Tecnologia"
-              className="h-11 sm:h-12 w-auto object-contain"
+              alt="Condutiva Serviços"
+              className="h-16 sm:h-20 w-auto object-contain"
             />
           </div>
           <div>
