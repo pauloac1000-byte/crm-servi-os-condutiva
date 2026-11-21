@@ -24,6 +24,8 @@ import logoImg from '@/assets/logo-removebg-previewedited-6e100.jpg'
 import { AbasLogin, type AbaLogin } from '@/components/login/abas-login'
 import { AbaPrimeiroAcesso } from '@/components/login/AbaPrimeiroAcesso'
 import { AbaRedefinir } from '@/components/login/AbaRedefinir'
+import { PainelSolicitarAcesso } from '@/components/login/PainelSolicitarAcesso'
+import { FormularioSuporte } from '@/components/FormularioSuporte'
 
 const inputClasse =
   'bg-white border-slate-200 pl-9 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#84bd22]'
@@ -36,6 +38,9 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Painéis fora das abas existentes: solicitação de acesso e suporte
+  const [painel, setPainel] = useState<'nenhum' | 'solicitar' | 'suporte'>('nenhum')
 
   // Forgot password modal state
   const [forgotOpen, setForgotOpen] = useState(false)
@@ -57,7 +62,15 @@ export default function Login() {
     setLoading(false)
 
     if (error) {
-      toast.error('Credenciais inválidas. Verifique seu e-mail e senha.')
+      // Bloqueio do fluxo de aprovação (403 do backend): mostra a mensagem
+      // real do servidor em vez de "Credenciais inválidas".
+      const status = (error as { status?: number } | null)?.status
+      const mensagemServidor = (error as { message?: string } | null)?.message
+      if (status === 403 && mensagemServidor) {
+        toast.error(mensagemServidor, { duration: 8000 })
+      } else {
+        toast.error('Credenciais inválidas. Verifique seu e-mail e senha.')
+      }
     } else {
       toast.success('Bem-vindo de volta!')
       navigate('/')
@@ -86,102 +99,132 @@ export default function Login() {
               Acesse sua conta para continuar
             </CardDescription>
           </div>
+          <div className="flex items-center justify-center gap-1 text-xs text-slate-400 -mt-2">
+            <button
+              type="button"
+              onClick={() => setPainel('solicitar')}
+              className="text-[#84bd22] font-semibold hover:underline"
+            >
+              Solicitar acesso
+            </button>
+            <span aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={() => setPainel('suporte')}
+              className="text-[#84bd22] font-semibold hover:underline"
+            >
+              Ajuda
+            </button>
+          </div>
           <AbasLogin abaAtiva={aba} onTrocarAba={trocarAba} />
         </CardHeader>
 
-        {aba === 'entrar' && (
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4 pt-4">
-              <div className="space-y-1.5">
-                <label htmlFor="email" className="text-xs font-semibold text-slate-700">
-                  E-mail corporativo <span className="text-[#84bd22]">*</span>
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu.email@condutiva.com.br"
-                    className={inputClasse}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-xs font-semibold text-slate-700">
-                    Senha <span className="text-[#84bd22]">*</span>
+        {painel === 'solicitar' ? (
+          <CardContent className="pt-4">
+            <PainelSolicitarAcesso onIrParaEntrar={() => setPainel('nenhum')} />
+          </CardContent>
+        ) : painel === 'suporte' ? (
+          <CardContent className="pt-4">
+            <FormularioSuporte
+              onVoltarSolicitacao={() => setPainel('nenhum')}
+              rotuloVoltar="Voltar"
+            />
+          </CardContent>
+        ) : (
+          aba === 'entrar' && (
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4 pt-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="email" className="text-xs font-semibold text-slate-700">
+                    E-mail corporativo <span className="text-[#84bd22]">*</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResetEmail(email)
-                      setResetSuccess(false)
-                      setForgotOpen(true)
-                    }}
-                    className="text-xs text-[#84bd22] hover:underline focus:outline-none focus:ring-1 focus:ring-[#84bd22] rounded px-1 transition-colors"
-                  >
-                    Esqueceu sua senha?
-                  </button>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seu.email@condutiva.com.br"
+                      className={inputClasse}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                  <Input
-                    id="password"
-                    type={mostrarSenha ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className="bg-white border-slate-200 pl-9 pr-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#84bd22]"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setMostrarSenha((v) => !v)}
-                    aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                    title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#84bd22]"
-                  >
-                    {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                      Senha <span className="text-[#84bd22]">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(email)
+                        setResetSuccess(false)
+                        setForgotOpen(true)
+                      }}
+                      className="text-xs text-[#84bd22] hover:underline focus:outline-none focus:ring-1 focus:ring-[#84bd22] rounded px-1 transition-colors"
+                    >
+                      Esqueceu sua senha?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Input
+                      id="password"
+                      type={mostrarSenha ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      className="bg-white border-slate-200 pl-9 pr-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#84bd22]"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMostrarSenha((v) => !v)}
+                      aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                      title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#84bd22]"
+                    >
+                      {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
+              </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4 pt-2">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#84bd22] hover:bg-[#74a91e] text-white font-bold h-11 shadow-lg shadow-[#84bd22]/20 group transition-all"
-              >
-                {loading ? 'Entrando...' : 'Entrar no Sistema'}
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 text-white" />
-              </Button>
-
-              <p className="text-center text-xs text-slate-500">
-                Não possui uma conta?{' '}
-                <button
-                  type="button"
-                  onClick={() => trocarAba('primeiro-acesso')}
-                  className="text-[#84bd22] font-semibold hover:underline"
+              <CardFooter className="flex flex-col space-y-4 pt-2">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#84bd22] hover:bg-[#74a91e] text-white font-bold h-11 shadow-lg shadow-[#84bd22]/20 group transition-all"
                 >
-                  Criar conta
-                </button>
-              </p>
-            </CardFooter>
-          </form>
+                  {loading ? 'Entrando...' : 'Entrar no Sistema'}
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 text-white" />
+                </Button>
+
+                <p className="text-center text-xs text-slate-500">
+                  Não possui uma conta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => trocarAba('primeiro-acesso')}
+                    className="text-[#84bd22] font-semibold hover:underline"
+                  >
+                    Criar conta
+                  </button>
+                </p>
+              </CardFooter>
+            </form>
+          )
         )}
 
-        {aba === 'primeiro-acesso' && (
+        {painel === 'nenhum' && aba === 'primeiro-acesso' && (
           <CardContent className="pt-0">
             <AbaPrimeiroAcesso onIrPara={trocarAba} onEnviado={() => navigate('/')} />
           </CardContent>
         )}
 
-        {aba === 'redefinir' && (
+        {painel === 'nenhum' && aba === 'redefinir' && (
           <AbaRedefinir onIrPara={trocarAba} onEnviado={() => navigate('/')} />
         )}
       </Card>

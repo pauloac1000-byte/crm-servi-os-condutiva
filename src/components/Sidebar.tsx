@@ -10,10 +10,11 @@ import {
   FileText,
   Wrench,
   Target,
-  ShieldCheck,
   BookOpen,
   LogOut,
   Bot,
+  LifeBuoy,
+  UserCog,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -26,7 +27,9 @@ interface SidebarProps {
 export function Sidebar({ onCloseMobile }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut, isAdmin } = useAuth()
+  const { signOut, isAdmin, user } = useAuth()
+
+  const ehAdminAprovacoes = user?.email?.toLowerCase() === 'paulo@condutiva.com.br'
 
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -39,12 +42,11 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     { label: 'Ordens de Serviço', path: '/ordens-servico', icon: Wrench },
     { label: 'Metas', path: '/metas', icon: Target },
     { label: 'Glossário de indicadores', path: '/glossario', icon: BookOpen },
-    ...(isAdmin
-      ? [
-          { label: 'Usuários', path: '/users', icon: ShieldCheck },
-          { label: 'Uso do Assistente', path: '/assistente-uso', icon: Bot },
-        ]
+    ...(isAdmin ? [{ label: 'Uso do Assistente', path: '/assistente-uso', icon: Bot }] : []),
+    ...(ehAdminAprovacoes
+      ? [{ label: 'Usuários', path: '/aprovacoes-acesso', icon: UserCog }]
       : []),
+    { label: 'Ajuda', path: '/ajuda', icon: LifeBuoy },
   ]
 
   const handleLogout = () => {

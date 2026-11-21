@@ -1,24 +1,30 @@
 import { useState } from 'react'
-import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { User, Mail, ArrowRight, UserPlus } from 'lucide-react'
+import { User, Mail, ArrowRight, UserPlus, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CampoSenha, ContainerCampo, RotuloObrigatorio } from '@/components/login/campo-senha'
+import { criarSolicitacaoAcesso } from '@/services/solicitacoes'
+import { AvisoAvaliacao } from '@/components/login/AvisoAvaliacao'
 import type { AbaLogin } from '@/components/login/abas-login'
 
 type AbaPrimeiroAcessoProps = {
   onIrPara: (aba: AbaLogin) => void
-  onEnviado: () => void
+  // Mantido por compatibilidade com a tela de login (não é mais chamado:
+  // o cadastro agora cria pedido de acesso, sem autenticar na hora).
+  onEnviado?: () => void
 }
 
+// Aba "Primeiro Acesso": cria um pedido em solicitacoes_acesso (status
+// pendente) em vez de autenticar na hora — o acesso é liberado pelo
+// administrador da Condutiva em até 24 horas.
 export function AbaPrimeiroAcesso({ onIrPara, onEnviado }: AbaPrimeiroAcessoProps) {
-  const { signUp } = useAuth()
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [enviado, setEnviado] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,15 +40,41 @@ export function AbaPrimeiroAcesso({ onIrPara, onEnviado }: AbaPrimeiroAcessoProp
     }
 
     setLoading(true)
-    const { error } = await signUp(email, password, nome)
-    setLoading(false)
-
-    if (error) {
-      toast.error('Erro ao criar conta. Verifique os dados informados.')
-    } else {
-      toast.success('Conta criada com sucesso! Bem-vindo.')
-      onEnviado()
+    try {
+      await criarSolicitacaoAcesso({ nome, email, telefone: '', vinculo: 'colaborador' })
+      setEnviado(true)
+      onEnviado?.()
+    } catch {
+      toast.error('Erro ao registrar pedido. Verifique os dados informados.')
+    } finally {
+      setLoading(false)
     }
+  }
+
+  if (enviado) {
+    return (
+      <div className="space-y-4 py-8 text-center animate-fade-in-up">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#84bd22]/20 border border-[#84bd22]/40 text-[#74a91e]">
+          <CheckCircle2 className="h-6 w-6" />
+        </div>
+        <div className="space-y-1.5">
+          <h4 className="text-sm font-semibold text-slate-900">Pedido registrado!</h4>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Seu pedido de acesso foi registrado e está aguardando avaliação do administrador da
+            Condutiva — a liberação ocorre em até 24 horas.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Button
+            type="button"
+            onClick={() => onIrPara('entrar')}
+            className="w-full bg-[#84bd22] hover:bg-[#74a91e] text-white font-bold h-10"
+          >
+            Voltar para o login
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -103,6 +135,10 @@ export function AbaPrimeiroAcesso({ onIrPara, onEnviado }: AbaPrimeiroAcessoProp
             autoComplete="new-password"
           />
         </div>
+      </div>
+
+      <div className="pt-5">
+        <AvisoAvaliacao />
       </div>
 
       <div className="flex flex-col space-y-4 pt-5">

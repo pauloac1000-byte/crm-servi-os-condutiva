@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AdminRoute } from '@/components/AdminRoute'
+import { AdminEmailRoute } from '@/components/AdminEmailRoute'
 
 import Index from './pages/Index'
 import Pipeline from './pages/Pipeline'
@@ -18,6 +19,8 @@ import Metas from './pages/Metas'
 import Glossario from './pages/Glossario'
 import UsersPage from './pages/Users'
 import AssistenteUso from './pages/AssistenteUso'
+import AprovacoesAcesso from './pages/AprovacoesAcesso'
+import Ajuda from './pages/Ajuda'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
@@ -54,6 +57,12 @@ const App = () => (
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/assistente-uso" element={<AssistenteUso />} />
               </Route>
+
+              <Route element={<AdminEmailRoute />}>
+                <Route path="/aprovacoes-acesso" element={<AprovacoesAcesso />} />
+              </Route>
+
+              <Route path="/ajuda" element={<Ajuda />} />
             </Route>
           </Route>
 
