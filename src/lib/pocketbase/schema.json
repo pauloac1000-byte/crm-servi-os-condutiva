@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T07:31:08.995Z",
+  "generatedAt": "2026-11-21T07:56:56.467Z",
   "collections": [
     {
       "name": "users",
@@ -1300,6 +1300,127 @@
         "CREATE INDEX idx_assistente_conversas_conversa ON assistente_conversas (conversa_id)",
         "CREATE INDEX idx_assistente_conversas_usuario_conversa ON assistente_conversas (usuario, conversa_id, created)"
       ]
+    },
+    {
+      "name": "solicitacoes_acesso",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'",
+        "view": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'",
+        "create": "",
+        "update": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'",
+        "delete": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "telefone",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "vinculo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["colaborador", "parceiro"]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["pendente", "aprovado", "negado"]
+        },
+        {
+          "name": "avaliado_por",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avaliado_em",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_solicitacoes_acesso_email ON solicitacoes_acesso (email)",
+        "CREATE INDEX idx_solicitacoes_acesso_status ON solicitacoes_acesso (status)"
+      ]
+    },
+    {
+      "name": "solicitacoes_suporte",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'",
+        "view": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'",
+        "create": "",
+        "update": null,
+        "delete": "@request.auth.id != '' && @request.auth.email = 'paulo@condutiva.com.br'"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "contato",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_solicitacoes_suporte_created ON solicitacoes_suporte (created)"]
     }
   ]
 }
