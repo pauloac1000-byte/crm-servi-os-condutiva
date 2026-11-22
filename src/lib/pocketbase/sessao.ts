@@ -50,10 +50,16 @@ type MetodosStore = {
   triggerChange: () => void
 }
 
+type GettersStore = {
+  token: string
+  record: Record<string, unknown> | null
+}
+
 /**
  * Reconfigura o cliente PocketBase existente para manter a sessão só em
  * memória e descarta qualquer token persistido por versões anteriores.
- * O onChange e os getters continuam os do SDK — nada mais muda para o app.
+ * Nada mais muda para o app: onChange continua o do SDK e isValid volta a
+ * refletir a sessão em memória (ele lê token/record, sobrescritos abaixo).
  */
 export const aplicarSessaoEmMemoria = () => {
   // 1. Descarta token legado em localStorage (sessão de antes desta mudança).
@@ -65,7 +71,7 @@ export const aplicarSessaoEmMemoria = () => {
     }
   }
 
-  const store = pb.authStore as unknown as MetodosStore
+  const store = pb.authStore as unknown as MetodosStore & GettersStore
   if (store.baseToken || store.baseModel) {
     store.baseToken = ''
     store.baseModel = null
@@ -82,5 +88,22 @@ export const aplicarSessaoEmMemoria = () => {
   }
   store.clear = () => {
     store.save('', null)
+  }
+
+  // 3. No SDK ~0.26 os getters token/record do LocalAuthStore leem do
+  //    localStorage (que aqui fica vazio por design) — isso deixaria isValid
+  //    false e o header Authorization vazio mesmo com login bem-sucedido.
+  //    Sobrescrevemos esses getters NA INSTÂNCIA para lerem da memória.
+  //    Ainda gravamos em baseToken/baseModel (campos privados do SDK), nunca
+  //    em localStorage, e o armazenamento é apenas da aba/documento atual.
+  for (const [propriedade, campo] of [
+    ['token', 'baseToken'],
+    ['record', 'baseModel'],
+  ] as const) {
+    Object.defineProperty(pb.authStore, propriedade, {
+      get: () => (store as unknown as Record<string, unknown>)[campo],
+      configurable: true,
+      enumerable: true,
+    })
   }
 }
