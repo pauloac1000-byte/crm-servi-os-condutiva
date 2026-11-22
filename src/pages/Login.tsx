@@ -26,6 +26,8 @@ import { AbaPrimeiroAcesso } from '@/components/login/AbaPrimeiroAcesso'
 import { AbaRedefinir } from '@/components/login/AbaRedefinir'
 import { PainelSolicitarAcesso } from '@/components/login/PainelSolicitarAcesso'
 import { FormularioSuporte } from '@/components/FormularioSuporte'
+import { haviaSessaoAtiva } from '@/lib/pocketbase/sessao'
+import { ShieldAlert } from 'lucide-react'
 
 const inputClasse =
   'bg-white border-slate-200 pl-9 text-slate-900 placeholder:text-slate-400 focus-visible:ring-[#84bd22]'
@@ -47,6 +49,11 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
+
+  // Aviso de sessão encerrada automaticamente por segurança (fechar aba,
+  // reabrir o navegador ou voltar): só aparece se houve sessão nesta origem
+  // que não terminou em logout manual.
+  const [avisoSessao] = useState(() => haviaSessaoAtiva())
 
   const trocarAba = (novaAba: AbaLogin) => {
     setAba(novaAba)
@@ -118,6 +125,20 @@ export default function Login() {
           </div>
           <AbasLogin abaAtiva={aba} onTrocarAba={trocarAba} />
         </CardHeader>
+
+        {avisoSessao && (
+          <div
+            role="alert"
+            className="mx-6 mb-1 flex items-start gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-left shadow-sm"
+          >
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <p className="text-xs leading-relaxed text-amber-800">
+              <span className="font-semibold">Sua sessão foi encerrada por segurança.</span> Ao sair
+              da área restrita, o acesso é finalizado automaticamente. Faça login novamente para
+              continuar.
+            </p>
+          </div>
+        )}
 
         {painel === 'solicitar' ? (
           <CardContent className="pt-4">

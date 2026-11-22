@@ -1,7 +1,16 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import pb from '@/lib/pocketbase/client'
+import {
+  aplicarSessaoEmMemoria,
+  marcarSessaoAtiva,
+  limparMarcadorSessao,
+} from '@/lib/pocketbase/sessao'
 
 import { User } from '@/types/crm'
+
+// Sessão viva só enquanto o documento está aberto (nunca persistida em
+// localStorage) — fechar a aba/navegador ou voltar pelo navegador encerra.
+aplicarSessaoEmMemoria()
 
 interface AuthContextType {
   user: User | null
@@ -36,6 +45,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
       setUser(pb.authStore.isValid && record ? (record as unknown as User) : null)
       setIsAuthenticated(pb.authStore.isValid)
+      // Sessão válida em memória: marca que houve login nesta origem (insumo do
+      // aviso "sessão encerrada" da tela de login após encerramento automático).
+      if (pb.authStore.isValid) marcarSessaoAtiva()
     })
 
     if (pb.authStore.isValid) {
@@ -47,8 +59,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (pb.authStore.record) pb.authStore.clear()
       setLoading(false)
     }
+
+    // Botão voltar do navegador pode reabrir esta página pelo cache do
+    // navegador (bfcache), com dados do usuário anterior ainda renderizados.
+    // Nesse caso encerramos a sessão e recarregamos direto para o login.
+    const aoRestaurarPagina = (evento: PageTransitionEvent) => {
+      if (!evento.persisted || !pb.authStore.isValid) return
+      pb.authStore.clear()
+      window.location.replace('/login')
+    }
+    window.addEventListener('pageshow', aoRestaurarPagina)
+
     return () => {
       unsubscribe()
+      window.removeEventListener('pageshow', aoRestaurarPagina)
     }
   }, [])
 
@@ -77,6 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const signOut = () => {
+    // Logout manual: sem aviso de sessão encerrada (foi escolha do usuário).
+    limparMarcadorSessao()
     pb.authStore.clear()
   }
 
